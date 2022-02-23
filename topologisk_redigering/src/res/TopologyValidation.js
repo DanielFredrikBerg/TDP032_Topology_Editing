@@ -61,11 +61,12 @@ geoJsonCorrect = {
 }
 
 class Line {
-  constructor(startX, endX, angle) {
+  constructor(startX, endX, startY, angle) {
     // to keep thing simple for now, we will assume start X is always lower than endX
     if (startX < endX) {
       this.startX = startX;
       this.endX = endX;
+      this.startY = startY;
       this.angle = angle;
     } else {
       console.log("when constructing a new Line, startX should be lower than endX")
@@ -96,21 +97,27 @@ class Line {
 
   //==> We will generally want to make sure we are working with arbitrary simple polygons.
 
+  function leftCoordinate(coordinate1, coordinate2) {
+    if (coordinate1[0] < coordinate2[0]) {
+      return coordinate1
+    }
+    return coordinate2
+  }
+
+  function rightCoordinate(coordinate1, coordinate2) {
+    if (coordinate1[0] > coordinate2[0]) {
+      return coordinate1
+    }
+    return coordinate2
+  }
+
   function angleBetweenTwoCoordinates(coordinate1, coordinate2) {
     // the position of the coordinates is arbitrary, but we want to make sure the line we create
     // "starts" from the left so we can compare lines more easily.
-    
-    var startCoordinate = []
-    var endCoordinate = []
 
-    if (coordinate1[0] < coordinate2[0]) {
-      startCoordinate = coordinate1
-      endCoordinate = coordinate2
-    } else {
-      startCoordinate = coordinate2
-      endCoordinate = coordinate1
-    }
-    // TODO: find better way to do this.
+    const startCoordinate = leftCoordinate(coordinate1, coordinate2)
+    const endCoordinate = rightCoordinate(coordinate1, coordinate2)
+
     console.log("start: " + startCoordinate + ", end: " + endCoordinate)
     
     const [startX, startY] = startCoordinate
@@ -133,18 +140,22 @@ class Line {
     console.log("# of coordinates in geometry: " + polygon.geometry.coordinates[0].length)
     console.log(polygon.geometry.coordinates[0])
     for (let i = 0; i < polygon.geometry.coordinates[0].length - 1; i++) {
-      const startPoint = polygon.geometry.coordinates[0][i]
-      const endPoint = polygon.geometry.coordinates[0][i+1]
+      const coordinate1 = polygon.geometry.coordinates[0][i]
+      const coordinate2 = polygon.geometry.coordinates[0][i+1]
+
+      const startPoint = leftCoordinate(coordinate1, coordinate2)
+      const endPoint = rightCoordinate(coordinate1, coordinate2)
 
       // calculate angle of line:
       const angle = angleBetweenTwoCoordinates(startPoint, endPoint)
       console.log("The angle between the coordinates is: " + angle + "\n")
 
       // pick out the X coordinate from each coordinate to determine which is leftmost.
-      const startX = Math.min(startPoint[0], endPoint[0])
-      const endX = Math.max(startPoint[0], endPoint[0])
+      const [startX, startY] = startPoint
+      const endX = endPoint[0]
 
-      lines.push(new Line(startX, endX, angle))
+
+      lines.push(new Line(startX, endX, startY, angle))
     }
 
     return lines
