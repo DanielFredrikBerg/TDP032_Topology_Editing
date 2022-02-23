@@ -173,7 +173,7 @@ class Line {
     } else if (line2.startX <= line1.startX && line2.endX >= line1.startX) {
       return line1.startY == line1.yValueAt(line1.startX)
     }
-    console.log("overlapX: " + overlapX)
+
   }
 
   function haveMatchingLines(lines1, lines2) {
@@ -238,4 +238,6 @@ class Line {
 
 
 console.log("You have solved the problem: " + (polygonsAreConnected(polygon1, polygon2) == true))
-  
+ 
+// TODO: does not work for vertical borders.
+// TODO: will rounding errors be an issue?
