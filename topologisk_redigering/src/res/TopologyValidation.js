@@ -161,23 +161,54 @@ class Line {
     return lines
   }
 
-  function hasMatchingLines(lines1, lines2) {
+  function haveMatchingCoordinate(line1, line2) {
+    // is there overlap in x-coordinates?
+    var overlapX = false
+    if (line1.startX <= line2.startX && line1.endX >= line2.startX 
+      || line2.startX <= line1.startX && line2.endX >= line1.startX) { // this smells fishy
+      overlapX = true
+    }
+    console.log("overlapX: " + overlapX)
+  }
+
+  function haveMatchingLines(lines1, lines2) {
+    var matchFound = false
     // sort each line by their angle
     const sortedLines1 = (new Array(...lines1)).sort(function(a, b) {
       return a.angle - b.angle
     })
-    console.log("\nOriginal")
-    console.log(lines1)
-    console.log("\nSorted")
-    console.log(sortedLines1)
-
     
+    const sortedLines2 = (new Array(...lines2)).sort(function(a, b) {
+      return a.angle - b.angle
+    })
 
     // if two lines with the same angle are found
     // => check to see if they have overlap in their x-values.
-    // if they do, there are matching line in the arrays.
+    // if they do, and they share a common y-value, there is a matching pair in the arrays.
     // if they do not, continue searching.
     // if there are no lines left, there are no matching lines.
+    var i = 0
+    var j = 0
+
+    while (!matchFound && i < sortedLines1.length && j < sortedLines2.length) {
+      if (sortedLines1[i].angle < sortedLines2[j] ) {
+        i++
+      } else if (sortedLines1[i].angle > sortedLines2[j].angle){
+        j++  
+      } else {
+        // => check if they have a shared point
+        if (haveMatchingCoordinate(sortedLines1[i], sortedLines2[j])) {
+          matchFound = true          
+        }
+        // if they do not, continue searching.
+        if (i < sortedLines1.length) {
+          i++
+        } else {
+          j++
+        }
+      }
+    }
+    return matchFound
   }
 
   function polygonsAreConnected(polygon1, polygon2) {
@@ -193,12 +224,13 @@ class Line {
      console.log("# of lines in polygon2: " + polygon2Lines.length)
     // 2. find a matching pair.
 
-    return hasMatchingLines(polygon1Lines, polygon2Lines)
+    return haveMatchingLines(polygon1Lines, polygon2Lines)
 
   }
 
   polygon1 = geoJsonCorrect.features[0]
   polygon2 = geoJsonCorrect.features[1]
+
 
 console.log("You have solved the problem: " + (polygonsAreConnected(polygon1, polygon2) == true))
   
