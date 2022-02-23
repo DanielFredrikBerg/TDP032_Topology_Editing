@@ -73,6 +73,10 @@ class Line {
     }
   }
 
+  yValueAt(xValue) {
+    return this.startY + this.angle * (xValue - this.startX)
+  }
+
 }
 
   // verify that two polygons in a "FeatureCollection" (i.e. Topology) are connected
@@ -163,10 +167,11 @@ class Line {
 
   function haveMatchingCoordinate(line1, line2) {
     // is there overlap in x-coordinates?
-    var overlapX = false
-    if (line1.startX <= line2.startX && line1.endX >= line2.startX 
-      || line2.startX <= line1.startX && line2.endX >= line1.startX) { // this smells fishy
-      overlapX = true
+
+    if (line1.startX <= line2.startX && line1.endX >= line2.startX) {
+      return line2.startY == line1.yValueAt(line2.startX)
+    } else if (line2.startX <= line1.startX && line2.endX >= line1.startX) {
+      return line1.startY == line1.yValueAt(line1.startX)
     }
     console.log("overlapX: " + overlapX)
   }
