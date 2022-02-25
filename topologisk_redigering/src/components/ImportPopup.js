@@ -3,7 +3,7 @@ import '../popup.css'
 
 function ImportPopup() {
   return (
-    <div className={popupStyles.}>ImportPopup</div>
+    <div className={}>ImportPopup</div>
   )
 
 }
