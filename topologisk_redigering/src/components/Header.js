@@ -6,7 +6,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import ZoomInMapIcon from '@mui/icons-material/ZoomInMap';
 import BuildIcon from '@mui/icons-material/Build';
 import { useState } from 'react'
-import NavItem from './NavItem'
+import Button from './Button'
 
 function Header({ selectTool }) {
 
@@ -24,21 +24,21 @@ function Header({ selectTool }) {
     return (
     <>
       <nav>
-        <NavItem icon={<AddIcon fontSize={currentTool==="Add" ? "large" : "small"} color={currentTool==="Add" ? "success" : ""}/>} label={"Add"} 
+        <Button icon={<AddIcon fontSize={currentTool==="Add" ? "large" : "small"} color={currentTool==="Add" ? "success" : ""}/>} label={"Add"} 
                 onClick={() => {setStatus("Add")}}/>
-        <NavItem icon={<DeleteOutlineIcon fontSize={currentTool==="Delete" ? "large" : "small"} color={currentTool==="Delete" ? "success" : ""}/>} label={"Delete most recent polygon"}
+        <Button icon={<DeleteOutlineIcon fontSize={currentTool==="Delete" ? "large" : "small"} color={currentTool==="Delete" ? "success" : ""}/>} label={"Delete most recent polygon"}
                 onClick={() => {setStatus("Delete")}}/>
-        <NavItem icon={<ModeEditIcon fontSize={currentTool==="Edit" ? "large" : "small"} color={currentTool==="Edit" ? "success" : ""}/>} label={"Edit"} 
+        <Button icon={<ModeEditIcon fontSize={currentTool==="Edit" ? "large" : "small"} color={currentTool==="Edit" ? "success" : ""}/>} label={"Edit"} 
                 onClick={() => {setStatus("Edit")}}/>
-        <NavItem icon={<UploadFileIcon fontSize={currentTool==="Import" ? "large" : "small"} color={currentTool==="Import" ? "success" : ""}/>}
+        <Button icon={<UploadFileIcon fontSize={currentTool==="Import" ? "large" : "small"} color={currentTool==="Import" ? "success" : ""}/>}
                 label={"Import File"} onClick={() => {setStatus("Import")}}/>
-        <NavItem icon={<ZoomInMapIcon fontSize={currentTool==="Zoom" ? "large" : "small"} color={currentTool==="Zoom" ? "success" : ""}/>}
+        <Button icon={<ZoomInMapIcon fontSize={currentTool==="Zoom" ? "large" : "small"} color={currentTool==="Zoom" ? "success" : ""}/>}
                label={"Zoom to most recent polygon"} onClick={() => {setStatus("Zoom")}}/>
-        <NavItem icon={<BuildIcon fontSize={currentTool==="Etc" ? "large" : "small"} color={currentTool==="Etc" ? "success" : ""}/>}
+        <Button icon={<BuildIcon fontSize={currentTool==="Etc" ? "large" : "small"} color={currentTool==="Etc" ? "success" : ""}/>}
                label={"Debug print"} onClick={() => {setStatus("Etc")}}/>   
-        <NavItem icon={<BuildIcon fontSize={currentTool==="Save" ? "large" : "small"} color={currentTool==="Save" ? "success" : ""}/>}
+        <Button icon={<BuildIcon fontSize={currentTool==="Save" ? "large" : "small"} color={currentTool==="Save" ? "success" : ""}/>}
                label={"Save to cloud!"} onClick={() => {setStatus("Save")}}/>      
-        <NavItem icon={<BuildIcon fontSize={currentTool==="AppVariableImport" ? "large" : "small"} color={currentTool==="AppVariableImport" ? "success" : ""}/>}
+        <Button icon={<BuildIcon fontSize={currentTool==="AppVariableImport" ? "large" : "small"} color={currentTool==="AppVariableImport" ? "success" : ""}/>}
         label={"Import geoJson state from App.js!"} onClick={() => {setStatus("AppVariableImport")}}/>                       
       </nav>
     </>)

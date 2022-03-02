@@ -1,7 +1,7 @@
 import { IconButton, Tooltip } from "@mui/material"
 
 
-function NavItem(props) {
+function Button(props) {
   const {icon, label, onClick, ...rest} = props
   return (
     <Tooltip title={label}>
@@ -12,4 +12,4 @@ function NavItem(props) {
 
 
 
-export default NavItem
+export default Button
