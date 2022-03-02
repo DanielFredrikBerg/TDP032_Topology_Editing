@@ -1,6 +1,7 @@
 import GeoJSONWriter from "jsts/org/locationtech/jts/io/GeoJSONWriter.js"
 import GeoJSONReader from "jsts/org/locationtech/jts/io/GeoJSONReader.js"
 import OverlayOp from 'jsts/org/locationtech/jts/operation/overlay/OverlayOp.js'
+import GeoJSON from "ol/format/GeoJSON.js"
 
 const reader = new GeoJSONReader()
 const writer = new GeoJSONWriter()
@@ -75,9 +76,14 @@ const geojsonobj = {
 
   const poly1 = reader.read(geojsonobj.features[0].geometry)
   const poly2 = reader.read(geojsonobj.features[1].geometry)
-
+  const uni = OverlayOp.union(poly1, poly2)
   //console.log(writer.write(poly1))
   //console.log(writer.write(poly2))
 
-  console.log(OverlayOp.union(poly1, poly2))
+  console.log(writer.write(uni))
+  const geojsnobj = new GeoJSON({ projection: "EPSG:3006" }).writeFeature(writer.write(uni))
+  console.log(geojsnobj.features)
+
+
+
   
