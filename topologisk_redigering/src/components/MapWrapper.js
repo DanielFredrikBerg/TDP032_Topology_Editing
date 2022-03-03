@@ -14,11 +14,13 @@ import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import MultiPoint from 'ol/geom/MultiPoint';
 import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom'
 import { Modify, Snap } from 'ol/interaction';
-
+import GeoJSONReader from 'jsts/org/locationtech/jts/io/GeoJSONReader.js'
 
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser";
 import IsValidOp from "jsts/org/locationtech/jts/operation/valid/IsValidOp";
-
+import RobustLineIntersector from 'jsts/org/locationtech/jts/algorithm/RobustLineIntersector';
+import LineIntersector from 'jsts/org/locationtech/jts/algorithm/LineIntersector';
+import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
 
 
 
@@ -326,19 +328,48 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         });
 
         initialMap.on('click', handleMapClick)
-        source.on('change', handleDrawEnd)
+        source.on('change', handleSourceChange)
         setMap(initialMap)
     }, []);
 
-    const handleDrawEnd = (evt) => {
-        const lastDrawnPoly = evt.target.getFeatures()
-        if (lastDrawnPoly.length > 0) {
-            const geom = lastDrawnPoly[lastDrawnPoly.length - 1].getGeometry()
-            const jstsGeom = parser.read(geom);
-            const isValid = IsValidOp.isValid(jstsGeom);
+    // new polygon drawn!
+    const handleSourceChange = (evt) => {
+        const allPolys = evt.target.getFeatures()
+        if (allPolys.length > 0) {
+            const lastDrawnPoly = allPolys[allPolys.length - 1].getGeometry()
+            const jstsLastDrawnPoly = parser.read(lastDrawnPoly);
+            const isValid = IsValidOp.isValid(jstsLastDrawnPoly);
             console.log("isValid: ", isValid);
+
+            calcIntersection(jstsLastDrawnPoly, allPolys)
         }
     }
+
+    // Probably isn't working correctly. need check 3/3-22 
+    const geoJsonToJsts = (geoJson) => {
+        let reader = new GeoJSONReader().read(geoJson)
+        return reader
+    }
+
+    // https://jsfiddle.net/vgrem/4v56xbu8/
+    function calcIntersection(jstsLastDrawnPoly, allPolys) {
+        const geometryFactory = new GeometryFactory();
+        //const newPolygon = createJstsPolygon(geometryFactory, jstsLastDrawnPoly);
+
+        //iterate existing polygons and find if a new polygon intersects any of them
+        const result = allPolys.filter(function (poly) {
+            //const curPolygon = createJstsPolygon(geometryFactory, poly);
+            const curPolygon = geoJsonToJsts(poly);
+            const intersection = jstsLastDrawnPoly.intersection(curPolygon);
+            return intersection.isEmpty() == false;
+        });
+
+        //if new polygon intersects any of exiting ones, draw it with green color
+        if (result.length > 0) {
+            jstsLastDrawnPoly.setOptions({ strokeWeight: 2.0, fillColor: 'green' });
+        }
+    }
+
 
     useEffect(() => {
         if (map) {
