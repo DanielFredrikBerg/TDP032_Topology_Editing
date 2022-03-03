@@ -4,7 +4,7 @@ import TileLayer from 'ol/layer/Tile';
 import 'ol/ol.css';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import Draw from 'ol/interaction/Draw';
+import Draw, { DrawEvent } from 'ol/interaction/Draw';
 import WMTSTileGrid from 'ol/tilegrid/WMTS';
 import WMTS from 'ol/source/WMTS';
 import { get as getProjection } from 'ol/proj';
@@ -93,15 +93,15 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             geometryName: "Polygon",    //TODO: change to value from tool selection in menu/header.
         }));
         setSnap(new Snap({ source: map.getLayers().getArray()[1].getSource() }))
-        const l = map.getLayers().getArray()[1].getSource().getFeatures()
-        if (l.length > 0) {
-            const geo = l[l.length - 1].getGeometry()
-            console.log(geo)
-            const jstsGeom = parser.read(geo);
-            console.log("x", jstsGeom)
-            const isValid = IsValidOp.isValid(jstsGeom);
-            console.log("isValid: ", isValid);
-        }
+        // const l = map.getLayers().getArray()[1].getSource().getFeatures()
+        // if (l.length > 0) {
+        //     const geo = l[l.length - 1].getGeometry()
+        //     console.log(geo)
+        //     const jstsGeom = parser.read(geo);
+        //     console.log("x", jstsGeom)
+        //     const isValid = IsValidOp.isValid(jstsGeom);
+        //     console.log("isValid: ", isValid);
+        // }
 
     }
 
@@ -223,8 +223,8 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     }
 
     const handleMapClick = (evt) => {
-        //console.log(evt.map.hasFeatureAtPixel(evt.pixel, evt.map.getLayers().getArray()[1].getSource()))
-        //evt.map.forEachFeatureAtPixel(evt.pixel, (feature) => { console.log(feature.getGeometryName()) })
+        // console.log(evt.map.hasFeatureAtPixel(evt.pixel, evt.map.getLayers().getArray()[1].getSource()))
+        // evt.map.forEachFeatureAtPixel(evt.pixel, (feature) => { console.log(feature.getGeometryName()) })
         //evt.map.forEachLayerAtPixel(evt.pixel, (layer) => {console.log(layer.getSource())})
         //console.log(evt.map.getLayers().getArray()[1].getSource().getFeatures()[0].getGeometryName())
         /* if (evt.map.hasFeatureAtPixel(evt.pixel)){
@@ -326,14 +326,26 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         });
 
         initialMap.on('click', handleMapClick)
+        source.on('change', handleDrawEnd)
         setMap(initialMap)
     }, []);
+
+    const handleDrawEnd = (evt) => {
+        const lastDrawnPoly = evt.target.getFeatures()
+        if (lastDrawnPoly.length > 0) {
+            const geom = lastDrawnPoly[lastDrawnPoly.length - 1].getGeometry()
+            const jstsGeom = parser.read(geom);
+            const isValid = IsValidOp.isValid(jstsGeom);
+            console.log("isValid: ", isValid);
+        }
+    }
 
     useEffect(() => {
         if (map) {
             map.addInteraction(draw)
             map.addInteraction(snap)
         }
+
     }, [draw])
 
     return (
