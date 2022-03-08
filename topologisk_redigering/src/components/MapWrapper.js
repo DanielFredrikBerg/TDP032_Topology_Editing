@@ -21,7 +21,7 @@ import IsValidOp from "jsts/org/locationtech/jts/operation/valid/IsValidOp";
 import RobustLineIntersector from 'jsts/org/locationtech/jts/algorithm/RobustLineIntersector';
 import LineIntersector from 'jsts/org/locationtech/jts/algorithm/LineIntersector';
 import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
-
+import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp"
 
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
@@ -42,6 +42,8 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         resolutions[z] = size / Math.pow(2, z);
         matrixIds[z] = z;
     }
+
+    //const [dumb, setDumb] = useState(false)
 
 
     const parser = new OL3Parser();
@@ -95,16 +97,6 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             geometryName: "Polygon",    //TODO: change to value from tool selection in menu/header.
         }));
         setSnap(new Snap({ source: map.getLayers().getArray()[1].getSource() }))
-        // const l = map.getLayers().getArray()[1].getSource().getFeatures()
-        // if (l.length > 0) {
-        //     const geo = l[l.length - 1].getGeometry()
-        //     console.log(geo)
-        //     const jstsGeom = parser.read(geo);
-        //     console.log("x", jstsGeom)
-        //     const isValid = IsValidOp.isValid(jstsGeom);
-        //     console.log("isValid: ", isValid);
-        // }
-
     }
 
     const stopDrawing = () => {
@@ -114,7 +106,6 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     }
 
     useEffect(() => {
-        console.log("suck my balls")
         if (map) {
             if (parser) {
                 const l = map.getLayers().getArray()[1].getSource().getFeatures()
@@ -341,32 +332,48 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             const isValid = IsValidOp.isValid(jstsLastDrawnPoly);
             console.log("isValid: ", isValid);
 
-            calcIntersection(jstsLastDrawnPoly, allPolys)
+            console.log("hello")
+            if(allPolys.length > 1)
+            {
+                console.log("calculating intersection")
+                calcIntersection(jstsLastDrawnPoly, jstsLastDrawnPoly,allPolys)
+            }
         }
     }
 
     // Probably isn't working correctly. need check 3/3-22 
     const geoJsonToJsts = (geoJson) => {
+        //debugger
         let reader = new GeoJSONReader().read(geoJson)
         return reader
     }
 
     // https://jsfiddle.net/vgrem/4v56xbu8/
-    function calcIntersection(jstsLastDrawnPoly, allPolys) {
-        const geometryFactory = new GeometryFactory();
-        //const newPolygon = createJstsPolygon(geometryFactory, jstsLastDrawnPoly);
-
-        //iterate existing polygons and find if a new polygon intersects any of them
+    function calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys) {
         const result = allPolys.filter(function (poly) {
-            //const curPolygon = createJstsPolygon(geometryFactory, poly);
-            const curPolygon = geoJsonToJsts(poly);
-            const intersection = jstsLastDrawnPoly.intersection(curPolygon);
-            return intersection.isEmpty() == false;
+            const curPolygon = parser.read(poly.getGeometry())
+            const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
+            console.log("dick")
+            return intersection.isEmpty() === false;
         });
+
+
+        //allPolys[allPolys.length - 1].setStyle()
 
         //if new polygon intersects any of exiting ones, draw it with green color
         if (result.length > 0) {
-            jstsLastDrawnPoly.setOptions({ strokeWeight: 2.0, fillColor: 'green' });
+            const style = new Style({
+                fill: new Fill({
+                     color: 'red',
+                     weight: 1
+                   }),
+                stroke: new Stroke({
+                     color: "blue",
+                     width: 1
+                })
+             });
+            console.log("iNTERSECTION DETECTED")
+            allPolys[allPolys.length - 1].setStyle(style)
         }
     }
 
