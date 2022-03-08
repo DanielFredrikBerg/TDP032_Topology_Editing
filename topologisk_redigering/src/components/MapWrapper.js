@@ -16,6 +16,8 @@ import MultiPoint from 'ol/geom/MultiPoint';
 import { Modify, Snap } from 'ol/interaction';
 import GeoJSONReader from 'jsts/org/locationtech/jts/io/GeoJSONReader.js'
 import GeoJSONWriter from 'jsts/org/locationtech/jts/io/GeoJSONWriter.js'
+import BufferOp from "jsts/org/locationtech/jts/operations/buffer/BufferOp.js"
+import BufferParameter from "jsts/org/locationtech/jts/operations/buffer/BufferParameter.js"
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser";
 import IsValidOp from "jsts/org/locationtech/jts/operation/valid/IsValidOp";
 import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom'
@@ -243,6 +245,16 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         }
     }
 
+    const getMergeablePolygons = (selectedPolygon, allPolygons) => {
+        const result = allPolygons.filter(function (poly) {
+            const curPolygon = parser.read(poly.getGeometry())
+            //const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
+            let bufferParameters = new BufferParameters();
+            console.log("dick")
+            return intersection.isEmpty() === false;
+        })
+    }
+
     useEffect(() => {
 
         console.log({ changeSelectedTool })
@@ -270,7 +282,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             }
             let testJstsData = geoJsonToJsts(testGeoJsonData)
             debugger
-            checkIntersection(testJstsData.features[0], testJstsData.features[1])
+            getMergeablePolygons
         }
         else if ({ changeSelectedTool }.changeSelectedTool == 'Save') {
             saveToDatabase()
