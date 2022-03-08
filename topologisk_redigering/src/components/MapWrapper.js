@@ -15,13 +15,22 @@ import MultiPoint from 'ol/geom/MultiPoint';
 import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom'
 import { Modify, Snap } from 'ol/interaction';
 import GeoJSONReader from 'jsts/org/locationtech/jts/io/GeoJSONReader.js'
-
+import '../App.css'
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser";
 import IsValidOp from "jsts/org/locationtech/jts/operation/valid/IsValidOp";
 import RobustLineIntersector from 'jsts/org/locationtech/jts/algorithm/RobustLineIntersector';
 import LineIntersector from 'jsts/org/locationtech/jts/algorithm/LineIntersector';
 import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp"
+import {
+    ScaleLine,
+    ZoomSlider,
+    MousePosition,
+    OverviewMap,
+    defaults as DefaultControls,
+  } from "ol/control";
+import {createStringXY} from 'ol/coordinate';
+import * as  olCoordinate from 'ol/coordinate'
 
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
@@ -43,7 +52,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         matrixIds[z] = z;
     }
 
-    //const [dumb, setDumb] = useState(false)
+    const [dumb, setDumb] = useState(false)
 
 
     const parser = new OL3Parser();
@@ -261,6 +270,16 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
 
     }, [currTool])
 
+    const mousePositionControl = new MousePosition({
+        projection: 'EPSG:3006',
+        // comment the following two lines to have the mouse position
+        // be placed within the map.
+        className: 'Coordinates',
+        
+        coordinateFormat: function(fuck) {
+            return olCoordinate.format(fuck, `{y}, {x}`, 4);
+          }
+      });
 
     useEffect(() => {
         const OUTER_SWEDEN_EXTENT = [-1200000, 4700000, 2600000, 8500000];
@@ -309,6 +328,12 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
                 swedenMapLayer,
                 polygonLayer
             ],
+            controls: DefaultControls().extend([
+                new ZoomSlider(),
+                mousePositionControl,
+                new ScaleLine(),
+                new OverviewMap()
+            ]),
             view: new View({
                 center: [609924.45, 6877630.37],
                 zoom: 5.9,
@@ -325,6 +350,11 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
 
     // new polygon drawn!
     const handleSourceChange = (evt) => {
+        console.log("am im dumb?", dumb)
+        if (dumb === true) {
+            setDumb(false)
+            return
+        }
         const allPolys = evt.target.getFeatures()
         if (allPolys.length > 0) {
             const lastDrawnPoly = allPolys[allPolys.length - 1].getGeometry()
@@ -333,10 +363,9 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             console.log("isValid: ", isValid);
 
             console.log("hello")
-            if(allPolys.length > 1)
-            {
+            if (allPolys.length > 1) {
                 console.log("calculating intersection")
-                calcIntersection(jstsLastDrawnPoly, jstsLastDrawnPoly,allPolys)
+                calcIntersection(jstsLastDrawnPoly, jstsLastDrawnPoly, allPolys)
             }
         }
     }
@@ -364,16 +393,17 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         if (result.length > 0) {
             const style = new Style({
                 fill: new Fill({
-                     color: 'red',
-                     weight: 1
-                   }),
+                    color: 'red',
+                    weight: 1
+                }),
                 stroke: new Stroke({
-                     color: "blue",
-                     width: 1
+                    color: "blue",
+                    width: 1
                 })
-             });
-            console.log("iNTERSECTION DETECTED")
-            allPolys[allPolys.length - 1].setStyle(style)
+            });
+            setDumb(true)
+            console.log("intersection", result)
+            //allPolys[allPolys.length - 1].setStyle(style)
         }
     }
 

@@ -28,6 +28,13 @@
   color: #61dafb;
 }
 
+.Coordinates {
+  color:black;
+  font-size: 20px;
+  object-position: right;
+  margin-left: 80%;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
