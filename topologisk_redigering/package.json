@@ -26,6 +26,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test_mocha": "mocha", 
     "eject": "react-scripts eject",
     "http": "json-server -p 4000 --watch --no-cors .\\src\\data\\geoJsonExample2.json",
     "httpl": "json-server -p 4000 --watch --no-cors ./src/data/geoJsonExample2.json"
@@ -47,5 +48,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "mocha": "^9.2.1"
   }
 }
