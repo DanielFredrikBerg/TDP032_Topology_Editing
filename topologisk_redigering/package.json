@@ -14,6 +14,8 @@
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",
+    "json-server": "^0.17.0",
+    "jsts": "^2.8.1",
     "ol": "^6.12.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -25,8 +27,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "http": "http-server .\\src\\data\\ --cors",
-    "httpl": "http-server ./src/data/ --cors"
+    "http": "json-server -p 4000 --watch --no-cors .\\src\\data\\geoJsonExample2.json",
+    "httpl": "json-server -p 4000 --watch --no-cors ./src/data/geoJsonExample2.json"
   },
   "eslintConfig": {
     "extends": [

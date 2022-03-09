@@ -16,5 +16,7 @@ nav {
   background-color: transparent;
   display: flex;
   justify-content: center;
+  position: relative;
+  z-index: 2;
 }
 
