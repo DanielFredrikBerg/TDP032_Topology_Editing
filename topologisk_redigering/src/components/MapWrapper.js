@@ -3,7 +3,7 @@ import { Map, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import 'ol/ol.css';
 import VectorLayer from 'ol/layer/Vector';
-import VectorSource from 'ol/source/Vector';
+import VectorSource, { VectorSourceEvent } from 'ol/source/Vector';
 import Draw, { DrawEvent } from 'ol/interaction/Draw';
 import WMTSTileGrid from 'ol/tilegrid/WMTS';
 import WMTS from 'ol/source/WMTS';
@@ -384,6 +384,9 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
 
     // new polygon drawn!
     const handleDrawend = (evt) => {
+        console.log(Object.keys(evt))
+        console.log(evt.feature)
+
         const mapSource = map.getLayers().getArray()[1].getSource()
         const allPolys = mapSource.getFeatures()
         // +1 because drawend dosesn't add the poly that finished drawing
@@ -396,17 +399,20 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             {
                 // if is unvalid do turf magic and unkink
                 
-                // //deleteLatest()
-                // const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject([lastDrawnPoly])
-                // console.log(jsonObj)
-                // const unkinked = unkinkPolygon(jsonObj)
-                // console.log("kinky", unkinked)
-                // //evt.target.addFeatures(unkinked)
-                // // add to geoJSON file here
+                const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject([lastDrawnPoly])
+                console.log(jsonObj)
+                const unkinked = unkinkPolygon(jsonObj)
+                console.log("kinky", unkinked)
+                evt.feature = unkinked.features[0]
+                //mapSource.dispatchEvent(new VectorSourceEvent('addfeatu'))
+                console.log(evt.feature)
+                // readFeatures converts only the first unkinked, iterate through them ...
+                console.log(GeoJSON().readFeatures(unkinked.features))
+                mapSource.addFeatures(unkinked.features)
             }
 
             console.log("hello")
-            if (allPolys.length + 1 > 1 && isValid) {
+            if (allPolys.length + 1> 1 && isValid) {
                 console.log("calculating intersection")
                 calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys)
             }
@@ -438,7 +444,6 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         if (result.length > 0) {
             console.log("intersection", result)
             lastDrawnPoly.setStyle(stylesInvalid)
-            console.log(parser.write(result))
         }
     }
 
@@ -448,9 +453,11 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             map.addInteraction(draw)
             map.addInteraction(snap)
             draw.addEventListener('drawend', handleDrawend)
+            //map.getLayers().getArray()[1].getSource().addEventListener('addfeature', handleNewPoly)
         }
 
     }, [draw])
+
 
     return (
         <div style={{ height: '100vh', width: '100%' }} ref={mapElement} className="map-container" />
