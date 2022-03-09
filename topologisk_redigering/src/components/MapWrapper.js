@@ -31,6 +31,7 @@ import {
   } from "ol/control";
 import {createStringXY} from 'ol/coordinate';
 import * as  olCoordinate from 'ol/coordinate'
+import unkinkPolygon from '@turf/unkink-polygon'
 
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
@@ -52,9 +53,6 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         matrixIds[z] = z;
     }
 
-    const [dumb, setDumb] = useState(false)
-
-
     const parser = new OL3Parser();
     parser.inject(
         Point,
@@ -69,11 +67,11 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     const styles = [
         new Style({
             stroke: new Stroke({
-                color: 'light-blue',
+                color: 'black',
                 width: 3,
             }),
             fill: new Fill({
-                color: 'rgba(0, 0, 255, 0.1)',
+                color: 'rgba(0, 0, 255, 0.2)',
             }),
         }),
         new Style({
@@ -81,6 +79,38 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
                 radius: 5,
                 fill: new Fill({
                     color: 'orange',
+                }),
+            }),
+
+            geometry: function (feature) {
+                // return the coordinates of the first ring of the polygon
+                const coordinates = feature.getGeometry().getCoordinates()[0];
+                return new MultiPoint(coordinates);
+            },
+        }),
+        new Style({
+            fill: new Fill({
+                color: 'rgba(255,255,0,0.1'
+            })
+
+        })
+    ];
+
+    const stylesInvalid = [
+        new Style({
+            stroke: new Stroke({
+                color: 'red',
+                width: 3,
+            }),
+            fill: new Fill({
+                color: 'rgba(255, 0, 0, 0.2)',
+            }),
+        }),
+        new Style({
+            image: new CircleStyle({
+                radius: 5,
+                fill: new Fill({
+                    color: 'red',
                 }),
             }),
 
@@ -344,28 +374,41 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         });
 
         initialMap.on('click', handleMapClick)
-        source.on('change', handleSourceChange)
+        //source.on('change', handleSourceChange)
+        if (draw)
+        {
+
+        }
         setMap(initialMap)
     }, []);
 
     // new polygon drawn!
-    const handleSourceChange = (evt) => {
-        console.log("am im dumb?", dumb)
-        if (dumb === true) {
-            setDumb(false)
-            return
-        }
-        const allPolys = evt.target.getFeatures()
-        if (allPolys.length > 0) {
-            const lastDrawnPoly = allPolys[allPolys.length - 1].getGeometry()
-            const jstsLastDrawnPoly = parser.read(lastDrawnPoly);
+    const handleDrawend = (evt) => {
+        const mapSource = map.getLayers().getArray()[1].getSource()
+        const allPolys = mapSource.getFeatures()
+        // +1 because drawend dosesn't add the poly that finished drawing
+        if (allPolys.length + 1 > 0) {
+            const lastDrawnPoly = evt.feature
+            const jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
             const isValid = IsValidOp.isValid(jstsLastDrawnPoly);
             console.log("isValid: ", isValid);
+            if(!isValid)
+            {
+                // if is unvalid do turf magic and unkink
+                
+                // //deleteLatest()
+                // const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject([lastDrawnPoly])
+                // console.log(jsonObj)
+                // const unkinked = unkinkPolygon(jsonObj)
+                // console.log("kinky", unkinked)
+                // //evt.target.addFeatures(unkinked)
+                // // add to geoJSON file here
+            }
 
             console.log("hello")
-            if (allPolys.length > 1) {
+            if (allPolys.length + 1 > 1 && isValid) {
                 console.log("calculating intersection")
-                calcIntersection(jstsLastDrawnPoly, jstsLastDrawnPoly, allPolys)
+                calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys)
             }
         }
     }
@@ -377,33 +420,25 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         return reader
     }
 
+
+    const olToJsts = (poly) => {
+        return parser.read(poly.getGeometry())
+    }
+
     // https://jsfiddle.net/vgrem/4v56xbu8/
     function calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys) {
+        // iterate thought all the polygons and check if they intersect with lastDrawnPoly
         const result = allPolys.filter(function (poly) {
-            const curPolygon = parser.read(poly.getGeometry())
+            const curPolygon = olToJsts(poly)
             const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
-            console.log("dick")
             return intersection.isEmpty() === false;
         });
 
-
-        //allPolys[allPolys.length - 1].setStyle()
-
         //if new polygon intersects any of exiting ones, draw it with green color
         if (result.length > 0) {
-            const style = new Style({
-                fill: new Fill({
-                    color: 'red',
-                    weight: 1
-                }),
-                stroke: new Stroke({
-                    color: "blue",
-                    width: 1
-                })
-            });
-            setDumb(true)
             console.log("intersection", result)
-            //allPolys[allPolys.length - 1].setStyle(style)
+            lastDrawnPoly.setStyle(stylesInvalid)
+            console.log(parser.write(result))
         }
     }
 
@@ -412,6 +447,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         if (map) {
             map.addInteraction(draw)
             map.addInteraction(snap)
+            draw.addEventListener('drawend', handleDrawend)
         }
 
     }, [draw])
