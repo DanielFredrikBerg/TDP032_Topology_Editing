@@ -1,23 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Map, View } from 'ol';
+import { Feature, Map, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import 'ol/ol.css';
-import {Fill, Stroke, Style} from 'ol/style';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Draw from 'ol/interaction/Draw';
 import WMTSTileGrid from 'ol/tilegrid/WMTS';
 import WMTS from 'ol/source/WMTS';
-import {get as getProjection} from 'ol/proj';
-import {getWidth} from 'ol/extent';
+import { get as getProjection } from 'ol/proj';
+import { getWidth } from 'ol/extent';
 import GeoJSON from 'ol/format/GeoJSON';
+import Geometry from "ol/geom/Geometry"
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import MultiPoint from 'ol/geom/MultiPoint';
+import { Modify, Snap } from 'ol/interaction';
+import GeoJSONReader from 'jsts/org/locationtech/jts/io/GeoJSONReader.js'
+import GeoJSONWriter from 'jsts/org/locationtech/jts/io/GeoJSONWriter.js'
+import BufferOp from "jsts/org/locationtech/jts/operation/buffer/BufferOp.js"
+import BufferParameters from "jsts/org/locationtech/jts/operation/buffer/BufferParameters.js"
+import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp"
+import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser";
+import IsValidOp from "jsts/org/locationtech/jts/operation/valid/IsValidOp";
+import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom'
 
-function MapWrapper({changeSelectedTool, selectTool}) {
+
+
+function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
     const [map, setMap] = useState();
     const mapElement = useRef();
     const mapRef = useRef();
     mapRef.current = map;
     const [draw, setDraw] = useState()
+    const [snap, setSnap] = useState()
 
     const projection = getProjection('EPSG:3857');
     const projectionExtent = projection.getExtent();
@@ -29,83 +43,300 @@ function MapWrapper({changeSelectedTool, selectTool}) {
         resolutions[z] = size / Math.pow(2, z);
         matrixIds[z] = z;
     }
-    
+
+    const parser = new OL3Parser();
+    parser.inject(
+        Point,
+        LineString,
+        LinearRing,
+        Polygon,
+        MultiPoint,
+        MultiLineString,
+        MultiPolygon
+    );
+
+    const styles = [
+        new Style({
+            stroke: new Stroke({
+                color: 'light-blue',
+                width: 3,
+            }),
+            fill: new Fill({
+                color: 'rgba(0, 0, 255, 0.1)',
+            }),
+        }),
+        new Style({
+            image: new CircleStyle({
+                radius: 5,
+                fill: new Fill({
+                    color: 'orange',
+                }),
+            }),
+
+            geometry: function (feature) {
+                // return the coordinates of the first ring of the polygon
+                const coordinates = feature.getGeometry().getCoordinates()[0];
+                return new MultiPoint(coordinates);
+            },
+        }),
+        new Style({
+            fill: new Fill({
+                color: 'rgba(255,255,0,0.1'
+            })
+
+        })
+    ];
+
     const drawPolygon = () => {
         setDraw(new Draw({
             source: map.getLayers().getArray()[1].getSource(),
-            type: "Polygon",    //TODO: change to value from tool selection in menu/header.
+            type: "Polygon",
+            geometryName: "Polygon",    //TODO: change to value from tool selection in menu/header.
         }));
+        setSnap(new Snap({ source: map.getLayers().getArray()[1].getSource() }))
+
     }
 
-    // npm install http-server -g (dosen't work if it's not global)
+    const stopDrawing = () => {
+        map.removeInteraction(snap)
+        map.removeInteraction(draw)
+    }
     // new terminal run command :  npm run http (for windows)
     //                            npm run httpl (for linux)
     // if you get an excution policy error run:
     //      Set-ExecutionPolicy Unrestricted (powershell admin to run http-server)
-    const vectorLayerFromUrl = (path) => {
-        const vectorLayer = new VectorLayer({
-            source: new VectorSource({
-                url: `http://127.0.0.1:8080/${path}`,
-                format: new GeoJSON()
-            })
-          })
+    // YOU NEED TO INSTALL json-server GLOBALLY FOR THE FOLLOWING FUNCTION TO WORK! (23/2)
+    // npm install -g json-server
 
-        return vectorLayer
+    const saveToDatabase = () => {
+        const features = map.getLayers().getArray()[1].getSource().getFeatures()
+        const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(features)
+        jsonObj["crs"] = {
+            "type": "name",
+            "properties": {
+                "name": "EPSG:3006"
+            }
+        }
+
+        console.log(JSON.stringify(jsonObj))
+
+        fetch("http://localhost:4000/file1",
+            {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                method: "PUT",
+                body: JSON.stringify(jsonObj)
+            })
+            .then(function (res) { console.log(res) })
+            .catch(function (res) { console.log(res) })
     }
 
-      //debugging for viewing last drawn polygon
+    //debugging for viewing last drawn polygon
     const zoomToLastPolygon = () => {
         let featureList = map.getLayers().getArray()[1].getSource().getFeatures()
         console.log("fl", featureList)
-        if (featureList.length > 0){
-            map.getView().fit(featureList[featureList.length - 1 ].getGeometry())
+        if (featureList.length > 0) {
+            map.getView().fit(featureList[featureList.length - 1].getGeometry())
         }
         else {
             console.log("No features on map")
-        } 
+        }
     }
 
-    const loadPolyFromDB = ([]) => {      
+    const loadPolyFromDB = ([]) => {
         //Cant load in layer while runnign at the moment.     
         //realoadMap(vectorLayerFromUrl("geoJsonExample2.geojson"))
     }
 
-    const stopDrawingMode = () => {
-        map.getInteractions().pop()
+    const deleteLatest = () => {
+        if (map) {
+            console.log(map.getLayers().getArray()[1].getSource().getFeatures())
+            let layers = map.getLayers().getArray()[1].getSource()
+            let length = map.getLayers().getArray()[1].getSource().getFeatures().length
+            let lastFeature = map.getLayers().getArray()[1].getSource().getFeatures()[length-1]
+            layers.removeFeature(lastFeature)
+        } 
+    }
+
+    const featuresToGeoJSON = () => {
+        let features = [];
+        if (map) { features = map.getLayers().getArray()[1].getSource().getFeatures() }
+        else { features = [] }
+        console.log("raw feature list")
+        console.log(features)
+        const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(features)
+        jsonObj["crs"] = {
+            "type": "name",
+            "properties": {
+                "name": "EPSG:3006"
+            }
+        }
+        console.log(jsonObj)
+        changeGeoJsonData(jsonObj)
+    }
+
+    const loadGeoJsonData = () => {
+        console.log(JSON.stringify(geoJsonData))
+        let featureList = []
+        featureList = (new GeoJSON()).readFeatures(geoJsonData) //  GeoJSON.readFeatures(geoJsonData)
+        console.log(featureList)
+        const source = new VectorSource({
+            wrapX: false,
+            features: featureList
+        });
+        console.log(map.getLayers().getArray()[1])
+        map.getLayers().getArray()[1].setSource(source)
+    }
+
+    const handleMapClick = (evt) => {
+        //console.log(evt.map.hasFeatureAtPixel(evt.pixel, evt.map.getLayers().getArray()[1].getSource()))
+        //evt.map.forEachFeatureAtPixel(evt.pixel, (feature) => { console.log(feature.getGeometryName()) })
+        //evt.map.forEachLayerAtPixel(evt.pixel, (layer) => {console.log(layer.getSource())})
+        //console.log(evt.map.getLayers().getArray()[1].getSource().getFeatures()[0].getGeometryName())
+        /* if (evt.map.hasFeatureAtPixel(evt.pixel)){
+            draw.removeLastPoint()
+        } */
+    }
+
+    const geoJsonToJsts = (geoJson) => {
+        let reader = new GeoJSONReader().read(geoJson)
+        return reader
+    }
+
+    const jstsToGeoJson = (jstsObject) => {
+        let writer = new GeoJSONWriter()
+        let featureList = []
+
+        jstsObject.features.forEach(feature => {
+            let writtenGeometry = writer.write(feature.geometry)
+            let polygon = new Polygon(writtenGeometry.coordinates)
+            let featureWrapping = new Feature(polygon)
+            featureList.push(featureWrapping)
+        });
+
+        const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(featureList)
+
+        jsonObj["crs"] = {
+            "type": "name",
+            "properties": {
+                "name": "EPSG:3006"
+            }
+        }
+        return jsonObj
+    }
+
+    const checkIntersection = (jstsGeometryA, jstsGeometryB) => {
+        debugger
+        let jstsGeometryIntersection = jstsGeometryA.intersection(jstsGeometryB)
+        console.log("checkIntersection finishing")
+    }
+
+    const currTool = {changeSelectedTool}.changeSelectedTool
+
+    // new polygon drawn!
+    const handleSourceChange = (evt) => {
+        const allPolys = evt.target.getFeatures()
+        if (allPolys.length > 0) {
+            const lastDrawnPoly = allPolys[allPolys.length - 1].getGeometry()
+            const jstsLastDrawnPoly = parser.read(lastDrawnPoly);
+            const isValid = IsValidOp.isValid(jstsLastDrawnPoly);
+            console.log("isValid: ", isValid);
+        }
+    }
+
+    const getMergeablePolygons = (selectedPolygon, allPolygons) => {
+        console.log("1")
+
+        let xAllPolygons = allPolygons.filter(function(poly) {
+            const curPolygon = parser.read(poly.getGeometry())
+            debugger
+            for (let index = 0; index < curPolygon._shell._points._coordinates.length; index++) {
+                if (curPolygon._shell._points._coordinates !== selectedPolygon._shell._points._coordinates){
+                    return false
+                }
+                
+            }
+            return  true
+        })
+
+        const result = xAllPolygons.filter(function (poly) {
+            const curPolygon = parser.read(poly.getGeometry())
+            //const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
+            let bufferParameters = new BufferParameters();
+            bufferParameters.setEndCapStyle(BufferParameters.CAP_ROUND);
+            console.log("2")
+            bufferParameters.setJoinStyle(BufferParameters.JOIN_MITRE);
+            let buffered = BufferOp.bufferOp(selectedPolygon,.0001, bufferParameters);
+            buffered.setUserData(selectedPolygon.getUserData());
+            debugger
+            const intersection = OverlayOp.intersection(buffered, curPolygon)
+            debugger
+            console.log(intersection.isEmpty() === false)
+            return intersection.isEmpty() === false
+        })
+        //returns all polygons that border with with the selected polygon
+        return result;
     }
 
     useEffect(() => {
-        console.log({changeSelectedTool})
-        if ({changeSelectedTool}.changeSelectedTool == 'Add'){
-            drawPolygon()  
-        }
-        else if (map) {
-            stopDrawingMode()
+
+        console.log({ changeSelectedTool })
+        if (currTool === 'Add') {
+            drawPolygon()
+        } else if (map) {
+            stopDrawing()
         }
 
-        if ({changeSelectedTool}.changeSelectedTool == 'Zoom'){
-            zoomToLastPolygon() 
+        if ({ changeSelectedTool }.changeSelectedTool == 'Zoom') {
+            zoomToLastPolygon()
         }
-        else if ({changeSelectedTool}.changeSelectedTool == 'Import'){
+        else if ({ changeSelectedTool }.changeSelectedTool == 'Import') {
             loadPolyFromDB()
         }
-        
-    }, [{changeSelectedTool}.changeSelectedTool])
+        else if({changeSelectedTool}.changeSelectedTool == 'Delete'){
+            console.log("A")
+            let testGeoJsonData = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(map.getLayers().getArray()[1].getSource().getFeatures())
+            console.log("B")
+            testGeoJsonData["crs"] = {
+                "type": "name",
+                "properties": {
+                    "name": "EPSG:3006"
+                }
+            }
+            let testJstsData = geoJsonToJsts(testGeoJsonData)
+            getMergeablePolygons(parser.read(map.getLayers().getArray()[1].getSource().getFeatures()[0].getGeometry()), map.getLayers().getArray()[1].getSource().getFeatures())
+        }
+        else if ({ changeSelectedTool }.changeSelectedTool == 'Save') {
+            saveToDatabase()
+        }
+        /* else if ({ changeSelectedTool }.changeSelectedTool == 'Delete') {
+            console.log("deleting")
+            deleteLatest()
+        } */
+
+        else if ({ changeSelectedTool }.changeSelectedTool == 'AppVariableImport') {
+            loadGeoJsonData()
+        }
+
+
+    }, [currTool])
+
 
     useEffect(() => {
-
         const OUTER_SWEDEN_EXTENT = [-1200000, 4700000, 2600000, 8500000];
         const wmts_3006_resolutions = [4096.0, 2048.0, 1024.0, 512.0, 256.0, 128.0, 64.0, 32.0, 16.0, 8.0];
         const wmts_3006_matrixIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    
+
         const tilegrid = new WMTSTileGrid({
             tileSize: 256,
             extent: OUTER_SWEDEN_EXTENT,
             resolutions: wmts_3006_resolutions,
             matrixIds: wmts_3006_matrixIds
         });
-    
-        const swedenMapLayer = new TileLayer({ 
+
+        const swedenMapLayer = new TileLayer({
             source: new WMTS({
                 url: "https://api.lantmateriet.se/open/topowebb-ccby/v1/wmts/token/5401f50c-568c-3459-a49f-69426e4ed1c6/?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=topowebb&STYLE=default&FORMAT=image/png",
                 layer: "swedenMapLayer",
@@ -115,16 +346,23 @@ function MapWrapper({changeSelectedTool, selectTool}) {
                 version: '1.0.0',
                 style: 'default',
                 crossOrigin: 'anonymous',
-                projection: "EPSG:3006"
+                projection: "EPSG:3006",
+                useSpatialIndex: 'false',
             }),
             style: 'default',
             wrapX: true,
         })
 
-        const source = new VectorSource({wrapX: false});
-    
+        const source = new VectorSource({
+            wrapX: false,
+            url: "http://localhost:4000/file1",
+            format: new GeoJSON({ projection: "EPSG:3006" }),
+
+        });
+
         const polygonLayer = new VectorLayer({
             source: source,
+            style: styles
         });
 
         const initialMap = new Map({
@@ -136,22 +374,26 @@ function MapWrapper({changeSelectedTool, selectTool}) {
             view: new View({
                 center: [609924.45, 6877630.37],
                 zoom: 5.9,
-                minZoom:5.8,
-                maxZoom:17,
-                
+                minZoom: 5.8,
+                maxZoom: 17,
+
             }),
         });
+
+        initialMap.on('click', handleMapClick)
+        source.on('change', handleSourceChange)
         setMap(initialMap)
     }, []);
 
     useEffect(() => {
         if (map) {
             map.addInteraction(draw)
-            }
-        }, [draw])
+            map.addInteraction(snap)
+        }
+    }, [draw])
 
     return (
-        <div style={{height:'100vh',width:'100%'}} ref={mapElement} className="map-container" />
+        <div style={{ height: '100vh', width: '100%' }} ref={mapElement} className="map-container" />
     );
 }
 
