@@ -382,10 +382,8 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         setMap(initialMap)
     }, []);
 
-    // new polygon drawn!
     const handleDrawend = (evt) => {
-        console.log(Object.keys(evt))
-        console.log(evt.feature)
+        //console.log(Object.keys(evt))
 
         const mapSource = map.getLayers().getArray()[1].getSource()
         const allPolys = mapSource.getFeatures()
@@ -398,20 +396,18 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             if(!isValid)
             {
                 // if is unvalid do turf magic and unkink
-                
                 const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject([lastDrawnPoly])
-                console.log(jsonObj)
                 const unkinked = unkinkPolygon(jsonObj)
-                console.log("kinky", unkinked)
-                evt.feature = unkinked.features[0]
-                //mapSource.dispatchEvent(new VectorSourceEvent('addfeatu'))
-                console.log(evt.feature)
                 // readFeatures converts only the first unkinked, iterate through them ...
-                console.log(GeoJSON().readFeatures(unkinked.features))
-                mapSource.addFeatures(unkinked.features)
+                for (let i = 0; i < unkinked.features.length; i++) {
+                    console.log(unkinked.features.length)
+                    console.log(unkinked.features[i])
+                    const feature = new GeoJSON().readFeatures(unkinked.features[i])
+                    mapSource.addFeatures(feature)
+                  }
+                  console.log(mapSource.getFeatures())
             }
 
-            console.log("hello")
             if (allPolys.length + 1> 1 && isValid) {
                 console.log("calculating intersection")
                 calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys)
@@ -442,8 +438,26 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
 
         //if new polygon intersects any of exiting ones, draw it with green color
         if (result.length > 0) {
-            console.log("intersection", result)
+            console.log("intersection", result[0].geometryName_)
             lastDrawnPoly.setStyle(stylesInvalid)
+        }
+    }
+
+    const isValid = (polygon) => {
+        const jstsPolygon = olToJsts(polygon)
+        const isValid = IsValidOp.isValid(jstsPolygon);
+        return isValid
+    }
+
+    // problems
+    // 1. invalid polygon not saved as red
+    // 2. drawn polygon sharing a border are marked as invalid
+    // 3. 
+    const handleNewPoly = (evt) => {
+        // when add feature check if valid
+        if (!isValid(evt.feature)) {
+            //deleteLatest()
+            map.getLayers().getArray()[1].getSource().removeFeature(evt.feature)
         }
     }
 
@@ -453,7 +467,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             map.addInteraction(draw)
             map.addInteraction(snap)
             draw.addEventListener('drawend', handleDrawend)
-            //map.getLayers().getArray()[1].getSource().addEventListener('addfeature', handleNewPoly)
+            map.getLayers().getArray()[1].getSource().addEventListener('addfeature', handleNewPoly)
         }
 
     }, [draw])
