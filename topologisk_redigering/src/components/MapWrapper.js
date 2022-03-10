@@ -16,11 +16,15 @@ import MultiPoint from 'ol/geom/MultiPoint';
 import { Modify, Snap } from 'ol/interaction';
 import GeoJSONReader from 'jsts/org/locationtech/jts/io/GeoJSONReader.js'
 import GeoJSONWriter from 'jsts/org/locationtech/jts/io/GeoJSONWriter.js'
-import BufferOp from "jsts/org/locationtech/jts/operations/buffer/BufferOp.js"
-import BufferParameter from "jsts/org/locationtech/jts/operations/buffer/BufferParameter.js"
+import BufferOp from "jsts/org/locationtech/jts/operation/buffer/BufferOp.js"
+import BufferParameters from "jsts/org/locationtech/jts/operation/buffer/BufferParameters.js"
+import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp"
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser";
 import IsValidOp from "jsts/org/locationtech/jts/operation/valid/IsValidOp";
+import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
+import GeometryCollection from 'jsts/org/locationtech/jts/geom/GeometryCollection';
 import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom'
+import topologyValidation from "../res/TopologyValidation"
 
 
 
@@ -245,14 +249,67 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         }
     }
 
-    const getMergeablePolygons = (selectedPolygon, allPolygons) => {
-        const result = allPolygons.filter(function (poly) {
+    //selectedPolygon: jsts geometry; allFeatures: the map's OL features.
+    //returns an array with all features that border with with the selected feature as jsts geometries.
+    const getMergeableFeatures = (selectedPolygon, allFeatures = map.getLayers().getArray()[1].getSource().getFeatures()) => {
+
+        //removes selected polygon from polygons it will be checked against
+        let otherFeatures = allFeatures.filter(function(poly) {
             const curPolygon = parser.read(poly.getGeometry())
-            //const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
-            let bufferParameters = new BufferParameters();
-            console.log("dick")
-            return intersection.isEmpty() === false;
+            return JSON.stringify(curPolygon) !== JSON.stringify(selectedPolygon)
         })
+
+        //fills results with features adjecent to selectedFeature.
+        const result = otherFeatures.filter(function (poly) {
+            const curPolygon = parser.read(poly.getGeometry())
+            let bufferParameters = new BufferParameters();
+            bufferParameters.setEndCapStyle(BufferParameters.CAP_ROUND);
+            bufferParameters.setJoinStyle(BufferParameters.JOIN_MITRE);
+            let buffered = BufferOp.bufferOp(selectedPolygon,.0001, bufferParameters);
+            buffered.setUserData(selectedPolygon.getUserData());
+            const intersection = OverlayOp.intersection(buffered, curPolygon)
+            console.log(intersection.isEmpty() === false)
+            return intersection.isEmpty() === false
+        })
+
+        const resultCleaned = result.filter(function(poly) {
+            const curPolygon = parser.read(poly.getGeometry())
+            let bufferParameters = new BufferParameters();
+            bufferParameters.setEndCapStyle(BufferParameters.CAP_ROUND);
+            bufferParameters.setJoinStyle(BufferParameters.JOIN_MITRE);
+            let buffered = BufferOp.bufferOp(selectedPolygon,.0001, bufferParameters);
+            buffered.setUserData(selectedPolygon.getUserData());
+            debugger
+            let count
+            for (let index = 0; index < curPolygon._shell._points._coordinates.length; index++) {
+                const point = new Point([curPolygon._shell._points._coordinates[index].x, curPolygon._shell._points._coordinates[index].y])
+                console.log("curr point:", point)
+                //if the point is inside the buffered polygon
+                if (OverlayOp.intersection(buffered, point).isEmpty === false) {
+                    counter++;
+                }
+            }
+            const intersection = OverlayOp.intersection(buffered, curPolygon)
+
+            //selectedPolygonLinesgetLines(selectedPolygon)
+
+
+        })
+
+        //result is an array of OL features, we need jsts geometries
+        //converting to jsts geometries 
+        let jstsFeatureList = []
+
+
+
+        debugger
+        for (let index = 0; index < result.length; index++) {
+            const element = result[index];
+            jstsFeatureList.push(parser.read(element.getGeometry()))
+        }
+
+        console.log("jstsFeatureList: ", jstsFeatureList)
+        return jstsFeatureList;
     }
 
     useEffect(() => {
@@ -282,7 +339,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             }
             let testJstsData = geoJsonToJsts(testGeoJsonData)
             debugger
-            getMergeablePolygons
+            getMergeableFeatures(parser.read(map.getLayers().getArray()[1].getSource().getFeatures()[0].getGeometry()))
         }
         else if ({ changeSelectedTool }.changeSelectedTool == 'Save') {
             saveToDatabase()
