@@ -26,7 +26,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "test_mocha": "mocha", 
+    "test_mocha": "mocha",
     "eject": "react-scripts eject",
     "http": "json-server -p 4000 --watch --no-cors .\\src\\data\\geoJsonExample2.json",
     "httpl": "json-server -p 4000 --watch --no-cors ./src/data/geoJsonExample2.json"
@@ -50,6 +50,9 @@
     ]
   },
   "devDependencies": {
+    "chai": "^4.3.6",
+    "lodash": "^4.17.21",
     "mocha": "^9.2.1"
-  }
+  },
+  "type": "module"
 }

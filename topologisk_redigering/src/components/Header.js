@@ -10,20 +10,20 @@ import Button from './Button'
 
 function Header({ selectTool }) {
 
-  const [currentTool, setCurrentTool] = useState("")
-  selectTool(currentTool)
+/*   const [currentTool, setCurrentTool] = useState("")
+  selectTool(currentTool) */
 
-  function setStatus(tool) {
+ /*  function setStatus(tool) {
     if (tool === currentTool){
       setCurrentTool("None")
     }else {
       setCurrentTool(tool)
     }
-  }
+  } */
 
     return (
     <>
-      <nav>
+      {/* <nav>
         <Button icon={<AddIcon fontSize={currentTool==="Add" ? "large" : "small"} color={currentTool==="Add" ? "success" : ""}/>} label={"Add"} 
                 onClick={() => {setStatus("Add")}}/>
         <Button icon={<DeleteOutlineIcon fontSize={currentTool==="Delete" ? "large" : "small"} color={currentTool==="Delete" ? "success" : ""}/>} label={"Delete most recent polygon"}
@@ -40,7 +40,7 @@ function Header({ selectTool }) {
                label={"Save to cloud!"} onClick={() => {setStatus("Save")}}/>      
         <Button icon={<BuildIcon fontSize={currentTool==="AppVariableImport" ? "large" : "small"} color={currentTool==="AppVariableImport" ? "success" : ""}/>}
         label={"Import geoJson state from App.js!"} onClick={() => {setStatus("AppVariableImport")}}/>                       
-      </nav>
+      </nav> */}
     </>)
 
 }

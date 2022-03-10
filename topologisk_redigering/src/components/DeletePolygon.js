@@ -1,9 +1,13 @@
-import React from 'react'
-
-function DeletePolygon() {
-  return (
-    <div>DeletePolygon</div>
-  )
+export const deleteLatest = (map) => {
+  if (map) {
+      //console.log(map.getLayers().getArray()[1].getSource().getFeatures())
+      let layers = map.getLayers().getArray()[1].getSource()
+      let length = getFeatureList(map).length
+      let lastFeature = getFeatureList(map)[length-1]
+      layers.removeFeature(lastFeature)                      
+  } 
 }
 
-export default DeletePolygon
+const getFeatureList = (map) => {
+  return map.getLayers().getArray()[1].getSource().getFeatures()
+}

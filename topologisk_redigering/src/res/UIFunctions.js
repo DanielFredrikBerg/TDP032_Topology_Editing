@@ -1,21 +1,32 @@
-  import MapWrapper from "../components/MapWrapper"
-    
-    
-    export function handleAddClick({selectTool}){
-        selectTool = "add"
-        console.log("add not implemented!");
-    }
+import { Draw, Snap } from 'ol/interaction'
 
-    export function handleDeleteClick() {
-        console.log("delete not implemented!");
-    }
+export const drawPolygon = (map, setCurrentTool) => {
+  if (map) {
 
-    export function handleEditClick() {
-        console.log("Edit not implemented");
-    }
+    const snap = new Snap({source: getMapSource(map)})
+    const draw = new Draw({
+      source: getMapSource(map),
+      type: "Polygon",
+      geometryName: "Polygon",    //TODO: change to value from tool selection in menu/header.
+  })
+  
+  map.addInteraction(draw)
+  map.addInteraction(snap)
+  setCurrentTool('DRAW')
 
-    export function handleImportClick() {
-        console.log("Upload not implemented")
-    }
+  draw.addEventListener('drawend', () => {
+    map.removeInteraction(snap)
+    map.removeInteraction(draw)
+    setCurrentTool('DRAWEND')
+  })
+  
+}
+} 
 
-    
+const getMapSource = (map) => {
+  return map.getLayers().getArray()[1].getSource()
+}
+
+export const highlightPolygon = (map) => {
+  console.log(map)
+}
