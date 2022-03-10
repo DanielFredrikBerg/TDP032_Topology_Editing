@@ -343,7 +343,7 @@ function MapWrapper({geoJsonData}) {
 
 
     }, [currTool])
- */
+ 
 
     useEffect(() => {
        
