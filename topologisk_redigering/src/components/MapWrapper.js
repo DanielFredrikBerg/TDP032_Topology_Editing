@@ -22,6 +22,7 @@ import RobustLineIntersector from 'jsts/org/locationtech/jts/algorithm/RobustLin
 import LineIntersector from 'jsts/org/locationtech/jts/algorithm/LineIntersector';
 import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp"
+import RelateOp from 'jsts/org/locationtech/jts/operation/relate/RelateOp'
 import {
     ScaleLine,
     ZoomSlider,
@@ -32,7 +33,8 @@ import {
 import {createStringXY} from 'ol/coordinate';
 import * as  olCoordinate from 'ol/coordinate'
 import unkinkPolygon from '@turf/unkink-polygon'
-
+import BufferParameters from 'jsts/org/locationtech/jts/operation/buffer/BufferParameters'
+import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
     const [map, setMap] = useState();
@@ -430,15 +432,18 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     // https://jsfiddle.net/vgrem/4v56xbu8/
     function calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys) {
         // iterate thought all the polygons and check if they intersect with lastDrawnPoly
+        let bufferParameters = new BufferParameters();
+        jstsLastDrawnPoly = BufferOp.bufferOp(jstsLastDrawnPoly,-.000001, bufferParameters);
+
         const result = allPolys.filter(function (poly) {
             const curPolygon = olToJsts(poly)
             const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
             return intersection.isEmpty() === false;
         });
 
-        //if new polygon intersects any of exiting ones, draw it with green color
+        //if new polygon intersects any of exiting ones, draw it with red color
         if (result.length > 0) {
-            console.log("intersection", result[0].geometryName_)
+            console.log("intersection")
             lastDrawnPoly.setStyle(stylesInvalid)
         }
     }
@@ -452,7 +457,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     // problems
     // 1. invalid polygon not saved as red
     // 2. drawn polygon sharing a border are marked as invalid
-    // 3. 
+    // 3. validate new draw polygons created by unkink
     const handleNewPoly = (evt) => {
         // when add feature check if valid
         if (!isValid(evt.feature)) {
