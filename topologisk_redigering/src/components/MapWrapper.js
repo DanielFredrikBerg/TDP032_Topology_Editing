@@ -32,9 +32,9 @@ import {
   } from "ol/control";
 import {createStringXY} from 'ol/coordinate';
 import * as  olCoordinate from 'ol/coordinate'
-import unkinkPolygon from '@turf/unkink-polygon'
 import BufferParameters from 'jsts/org/locationtech/jts/operation/buffer/BufferParameters'
 import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
+import { letterSpacing } from '@mui/system';
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
     const [map, setMap] = useState();
@@ -143,7 +143,6 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     const stopDrawing = () => {
         map.removeInteraction(snap)
         map.removeInteraction(draw)
-
     }
 
     useEffect(() => {
@@ -384,50 +383,44 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         setMap(initialMap)
     }, []);
 
+
+    const unkinkPolygon = (geoJson) => {
+
+
+    }
+
+
     const handleDrawend = (evt) => {
         //console.log(Object.keys(evt))
-
         const mapSource = map.getLayers().getArray()[1].getSource()
         const allPolys = mapSource.getFeatures()
         // +1 because drawend dosesn't add the poly that finished drawing
         if (allPolys.length + 1 > 0) {
             const lastDrawnPoly = evt.feature
-            const jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
+            let jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
             const isValid = IsValidOp.isValid(jstsLastDrawnPoly);
-            console.log("isValid: ", isValid);
             if(!isValid)
             {
                 // if is unvalid do turf magic and unkink
-                const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject([lastDrawnPoly])
+                const jsonObj = new GeoJSON({ featureProjection: "EPSG:3006" }).writeFeaturesObject([lastDrawnPoly])
                 const unkinked = unkinkPolygon(jsonObj)
                 // readFeatures converts only the first unkinked, iterate through them ...
                 for (let i = 0; i < unkinked.features.length; i++) {
-                    console.log(unkinked.features.length)
-                    console.log(unkinked.features[i])
                     const feature = new GeoJSON().readFeatures(unkinked.features[i])
+                    const jstsFeature = olToJsts(feature[0])
+                    calcIntersection(feature[0], jstsFeature, allPolys)
                     mapSource.addFeatures(feature)
+
                   }
-                  console.log(mapSource.getFeatures())
             }
 
-            if (allPolys.length + 1> 1 && isValid) {
+            if (allPolys.length + 1 > 1 && isValid) {
                 console.log("calculating intersection")
                 calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys)
             }
         }
     }
 
-    // Probably isn't working correctly. need check 3/3-22 
-    const geoJsonToJsts = (geoJson) => {
-        //debugger
-        let reader = new GeoJSONReader().read(geoJson)
-        return reader
-    }
-
-
-    const olToJsts = (poly) => {
-        return parser.read(poly.getGeometry())
-    }
 
     // https://jsfiddle.net/vgrem/4v56xbu8/
     function calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys) {
@@ -443,10 +436,24 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
 
         //if new polygon intersects any of exiting ones, draw it with red color
         if (result.length > 0) {
-            console.log("intersection")
+            console.log("intersection", result)
             lastDrawnPoly.setStyle(stylesInvalid)
         }
     }
+
+    // Probably isn't working correctly. need check 3/3-22 
+    const geoJsonToJsts = (geoJson) => {
+        //debugger
+        let reader = new GeoJSONReader().read(geoJson)
+        return reader
+    }
+
+
+    const olToJsts = (poly) => {
+        return parser.read(poly.getGeometry())
+
+    }
+
 
     const isValid = (polygon) => {
         const jstsPolygon = olToJsts(polygon)
@@ -456,7 +463,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
 
     // problems
     // 1. invalid polygon not saved as red
-    // 2. drawn polygon sharing a border are marked as invalid
+    // 2. DONE drawn polygon sharing a border are marked as invalid 
     // 3. validate new draw polygons created by unkink
     const handleNewPoly = (evt) => {
         // when add feature check if valid
