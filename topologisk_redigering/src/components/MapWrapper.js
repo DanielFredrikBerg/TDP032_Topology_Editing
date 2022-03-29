@@ -35,6 +35,7 @@ import * as  olCoordinate from 'ol/coordinate'
 import BufferParameters from 'jsts/org/locationtech/jts/operation/buffer/BufferParameters'
 import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
 import { letterSpacing } from '@mui/system';
+import simplepolygon from 'simplepolygon';
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
     const [map, setMap] = useState();
@@ -384,9 +385,8 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     }, []);
 
 
-    const unkinkPolygon = (geoJson) => {
-
-
+    const unkinkPolygon = (jsonObj) => {
+        return simplepolygon(jsonObj.features[0])
     }
 
 
