@@ -19,7 +19,7 @@ import { featuresToGeoJson } from '../res/GeoJsonFunctions'
 import { saveToDatabase, GeoJsonObjToFeatureList, loadPolyFromDB } from '../res/DatabaseFunctions';
 import { deleteLatest } from './DeletePolygon'
 import { zoomToLastPolygon } from './ZoomToPolygon'
-
+import getMergeableFeatures from "../res/jsts.js"
 
 
 function MapWrapper({geoJsonData}) {
@@ -199,6 +199,7 @@ function MapWrapper({geoJsonData}) {
     
     const onMapClickHandler = () => {
         highlightPolygon(map)
+        getMergeableFeatures(parser.read(map.getLayers().getArray()[1].getSource().getFeatures()[0].getGeometry()), map.getLayers().getArray()[1].getSource().getFeatures())
         if(currentTool === 'DRAWEND'){
             setCurrentTool('NONE')
         }

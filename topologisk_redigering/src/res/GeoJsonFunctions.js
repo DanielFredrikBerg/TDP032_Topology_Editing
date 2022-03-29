@@ -34,16 +34,24 @@ import { Polygon } from 'ol/geom.js';
     export const jstsToGeoJson = (jstsObject) => {
         let writer = new GeoJSONWriter()
         let featureList = []
-
-        jstsObject.features.forEach(feature => {
-            let writtenGeometry = writer.write(feature.geometry)
+        let jsonObj = new GeoJSON({ projection: "EPSG:3006" })
+        if (jstsObject.features) {
+            jstsObject.features.forEach(feature => {
+                let writtenGeometry = writer.write(feature.geometry)
+                let polygon = new Polygon(writtenGeometry.coordinates)
+                let featureWrapping = new Feature(polygon)
+                featureList.push(featureWrapping)
+            });
+            jsonObj = jsonObj.writeFeaturesObject(featureList)
+        }
+        else {
+            let writtenGeometry = writer.write(jstsObject)
             let polygon = new Polygon(writtenGeometry.coordinates)
             let featureWrapping = new Feature(polygon)
-            featureList.push(featureWrapping)
-        });
+            jsonObj = jsonObj.writeFeatureObject(featureWrapping)
+        }
 
-        const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(featureList)
-
+       
         jsonObj["crs"] = {
             "type": "name",
             "properties": {
