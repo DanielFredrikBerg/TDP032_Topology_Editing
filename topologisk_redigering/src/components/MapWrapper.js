@@ -34,7 +34,7 @@ import * as  olCoordinate from 'ol/coordinate'
 
 import { letterSpacing } from '@mui/system';
 import simplepolygon from 'simplepolygon';
-import {polygonDrawend}  from '../res/unkink.js'
+import { polygonDrawend, isValid }  from '../res/unkink.js'
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
     const [map, setMap] = useState();
@@ -381,13 +381,13 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     // 1. invalid polygon not saved as red
     // 2. DONE drawn polygon sharing a border are marked as invalid 
     // 3. validate new draw polygons created by unkink
-    // const handleNewPoly = (evt) => {
-    //     // when add feature check if valid
-    //     if (!isValid(evt.feature)) {
-    //         //deleteLatest()
-    //         map.getLayers().getArray()[1].getSource().removeFeature(evt.feature)
-    //     }
-    // }
+    const handleNewPoly = (evt) => {
+        // when add feature check if valid
+        if (!isValid(evt.feature)) {
+            //deleteLatest()
+            map.getLayers().getArray()[1].getSource().removeFeature(evt.feature)
+        }
+    }
 
 
     useEffect(() => {
@@ -395,7 +395,7 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             map.addInteraction(draw)
             map.addInteraction(snap)
             draw.addEventListener('drawend', handleDrawend)
-            //map.getLayers().getArray()[1].getSource().addEventListener('addfeature', handleNewPoly)
+            map.getLayers().getArray()[1].getSource().addEventListener('addfeature', handleNewPoly)
         }
 
     }, [draw])
