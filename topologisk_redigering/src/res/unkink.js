@@ -7,7 +7,6 @@ import GeoJSON from 'ol/format/GeoJSON';
 import BufferParameters from 'jsts/org/locationtech/jts/operation/buffer/BufferParameters'
 import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp"
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 
 
 const parser = new OL3Parser();
@@ -22,23 +21,8 @@ parser.inject(
 );
 
 
-
-export const polygonDrawend = (evt, map) => {
-    const mapSource = map.getLayers().getArray()[1].getSource()
-    const allPolys = mapSource.getFeatures()
-    // +1 because drawend dosesn't add the poly that finished drawing
-    if (allPolys.length + 1 > 0) {
-        const lastDrawnPoly = evt.feature
-
-        if (!isValid(lastDrawnPoly)) {
-            unkink(lastDrawnPoly, allPolys, mapSource)
-        }
-
-        if (allPolys.length + 1 > 1 && isValid) {
-            console.log("calculating intersection")
-            calcIntersection(lastDrawnPoly, allPolys)
-        }
-    }
+export const olToJsts = (poly) => {
+    return parser.read(poly.getGeometry())
 }
 
 
@@ -48,22 +32,11 @@ export const isValid = (olPoly) => {
 }
 
 
-export const unkink = (olPoly, allPolys, mapSource) => {
-    const unkinkedCollection = unkinkPolygon(olPoly)
-    highlightUnkinkIntersection(unkinkedCollection, allPolys, mapSource)
-}
-
-
-// readFeatures converts only the first unkinked, iterate through them ...
-const highlightUnkinkIntersection = (unkinkedCollection, allPolys, mapSource) => {
-    for (let i = 0; i < unkinkedCollection.features.length; i++) {
-        const feature = new GeoJSON().readFeatures(unkinkedCollection.features[i])
-        calcIntersection(feature[0], allPolys)
-        mapSource.addFeatures(feature)
-    }
-}
-
-
+/* 
+ * creates several openlayer features from one self-intersecting polygon
+ * @poly = openlayers feature
+ * returns an openlayers feature array
+ */
 export const unkinkPolygon = (poly) => {
     const jsonObj = new GeoJSON({ featureProjection: "EPSG:3006" }).writeFeaturesObject([poly])
     const geoJsonCollection = simplepolygon(jsonObj.features[0]).features
@@ -78,16 +51,16 @@ export const unkinkPolygon = (poly) => {
 }
 
 
-export const olToJsts = (poly) => {
-    return parser.read(poly.getGeometry())
-}
-
-
-// https://jsfiddle.net/vgrem/4v56xbu8/
+/*
+ * return true if @lastDrawnPoly intersects any of the polys in @allPolys
+ * @lastDrawnPoly = openlayers feature
+ * @allPolys = openlayer features
+ */
 export function calcIntersection(lastDrawnPoly, allPolys) {
     let jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
-
-    // shrink
+    console.log(allPolys)
+    // shrink polygon by tiny amount otherwise it will count as intersect
+    // if two polygons share a point on a border
     let bufferParameters = new BufferParameters();
     jstsLastDrawnPoly = BufferOp.bufferOp(jstsLastDrawnPoly, -.000001, bufferParameters);
 
@@ -98,16 +71,8 @@ export function calcIntersection(lastDrawnPoly, allPolys) {
         return intersection.isEmpty() === false;
     });
 
-    //if new polygon intersects any of exiting ones, draw it with red color
     return result.length > 0
-//     if (result.length > 0) {
-//         // console.log("intersection", result)
-//         // lastDrawnPoly.setStyle(stylesInvalid)
-//         return true
-//     } else {
-//         return false
-//     }
-    }
+}
 
 
-export default { polygonDrawend, isValid, unkinkPolygon, calcIntersection, stylesInvalid} ;
+export default { isValid, unkinkPolygon, calcIntersection } ;

@@ -34,7 +34,7 @@ import * as  olCoordinate from 'ol/coordinate'
 
 import { letterSpacing } from '@mui/system';
 import simplepolygon from 'simplepolygon';
-import unkink, { polygonDrawend, isValid, unkinkPolygon, calcIntersection, stylesInvalid }  from '../res/unkink.js'
+import unkink, { isValid, unkinkPolygon, calcIntersection }  from '../res/unkink.js'
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
     const [map, setMap] = useState();
@@ -352,6 +352,13 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
 
 
 
+    const highlightIfIntersect = (poly, mapSource) => {
+        let intersect = calcIntersection(poly, mapSource.getFeatures())
+        if(intersect)
+        {
+            poly.setStyle(stylesInvalid)
+        }
+    }
 
 
     const handleDrawend = (evt) => {
@@ -372,33 +379,18 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
             for (let i = 0; i < unkinkedCollection.length; i++)
             {
 
-                console.log()
-                let intersect = calcIntersection(unkinkedCollection[i][0], mapSource.getFeatures())
-                if(intersect)
-                {
-                    unkinkedCollection[i][0].setStyle(stylesInvalid)
-                }
+                highlightIfIntersect(unkinkedCollection[i][0], mapSource)
                 mapSource.addFeatures(unkinkedCollection[i])
             }
         }
         else 
         {
-            let intersect = calcIntersection(evt.feature, mapSource.getFeatures())
-            if(intersect)
-            {
-                evt.feature.setStyle(stylesInvalid)
-            }
+            highlightIfIntersect(evt.feature, mapSource)
             // else add last drawn poly
             mapSource.addFeatures(evt.feature)
             
         }
-        // check intersection
-            // if intersection return poly that is invalid
-            // make it red
-        
     }
-
-
 
 
     // Probably isn't working correctly. need check 3/3-22 
