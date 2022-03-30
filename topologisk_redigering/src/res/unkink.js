@@ -28,14 +28,15 @@ export const polygonDrawend = (evt, map) => {
     // +1 because drawend dosesn't add the poly that finished drawing
     if (allPolys.length + 1 > 0) {
         const lastDrawnPoly = evt.feature
+        let jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
 
         if (!isValid(lastDrawnPoly)) {
-            unkink(lastDrawnPoly, allPolys, mapSource)
+            unkink(lastDrawnPoly, jstsLastDrawnPoly,allPolys, mapSource)
         }
 
         if (allPolys.length + 1 > 1 && isValid) {
             console.log("calculating intersection")
-            calcIntersection(lastDrawnPoly, allPolys)
+            calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys)
         }
     }
 }
@@ -45,19 +46,26 @@ export const isValid = (olPoly) => {
     return IsValidOp.isValid(jstsLastDrawnPoly);
 }
 
-export const unkink = (olPoly, allPolys, mapSource) => {
+export const unkink = (olPoly, jstsLastDrawnPoly, allPolys, mapSource) => {
     const jsonObj = new GeoJSON({ featureProjection: "EPSG:3006" }).writeFeaturesObject([olPoly])
     const unkinkedCollection = unkinkPolygon(jsonObj)
-    highlightUnkinkIntersection(unkinkedCollection, allPolys, mapSource)
+    highlightUnkinkIntersection(unkinkedCollection, jstsLastDrawnPoly, allPolys, mapSource)
+    // const features0 = new GeoJSON().readFeatures(unkinkedCollection.features[0])
+    // const features1 = new GeoJSON().readFeatures(unkinkedCollection.features[1])
+    // mapSource.addFeatures(features0)
+    // mapSource.addFeatures(features1)
+
 
 }
 
 // readFeatures converts only the first unkinked, iterate through them ...
-const highlightUnkinkIntersection = (unkinkedCollection, allPolys, mapSource) => {
+const highlightUnkinkIntersection = (unkinkedCollection, jstsLastDrawnPoly, allPolys, mapSource) => {
     for (let i = 0; i < unkinkedCollection.features.length; i++) {
-        const features = new GeoJSON().readFeatures(unkinkedCollection.features[i])
-        calcIntersection(features, allPolys)
-        mapSource.addFeatures(features)
+        const feature = new GeoJSON().readFeatures(unkinkedCollection.features[i])
+
+        const jstsFeature = olToJsts(feature[0])
+        calcIntersection(feature[0], jstsLastDrawnPoly, allPolys)
+        mapSource.addFeatures(feature)
     }
 }
 
@@ -66,15 +74,15 @@ const unkinkPolygon = (jsonObj) => {
 }
 // this broken!
 export const olToJsts = (poly) => {
-    console.log(poly.value_)
+    console.log(poly)
     return parser.read(poly.getGeometry())
 }
 
 
 // https://jsfiddle.net/vgrem/4v56xbu8/
-function calcIntersection(lastDrawnPoly, allPolys) {
+function calcIntersection(lastDrawnPoly, jstsLastDrawnPoly, allPolys) {
     // iterate thought all the polygons and check if they intersect with lastDrawnPoly
-    let jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
+    //jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
 
     let bufferParameters = new BufferParameters();
     jstsLastDrawnPoly = BufferOp.bufferOp(jstsLastDrawnPoly, -.000001, bufferParameters);
