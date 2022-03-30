@@ -22,6 +22,7 @@ parser.inject(
 );
 
 
+
 export const polygonDrawend = (evt, map) => {
     const mapSource = map.getLayers().getArray()[1].getSource()
     const allPolys = mapSource.getFeatures()
@@ -48,8 +49,7 @@ export const isValid = (olPoly) => {
 
 
 export const unkink = (olPoly, allPolys, mapSource) => {
-    const jsonObj = new GeoJSON({ featureProjection: "EPSG:3006" }).writeFeaturesObject([olPoly])
-    const unkinkedCollection = unkinkPolygon(jsonObj)
+    const unkinkedCollection = unkinkPolygon(olPoly)
     highlightUnkinkIntersection(unkinkedCollection, allPolys, mapSource)
 }
 
@@ -64,8 +64,17 @@ const highlightUnkinkIntersection = (unkinkedCollection, allPolys, mapSource) =>
 }
 
 
-const unkinkPolygon = (jsonObj) => {
-    return simplepolygon(jsonObj.features[0])
+export const unkinkPolygon = (poly) => {
+    const jsonObj = new GeoJSON({ featureProjection: "EPSG:3006" }).writeFeaturesObject([poly])
+    const geoJsonCollection = simplepolygon(jsonObj.features[0]).features
+
+    const olFeatures = []
+    for(let i = 0;  i < geoJsonCollection.length; i++)
+    {
+        olFeatures.push(new GeoJSON().readFeatures(geoJsonCollection[i]))
+    }
+
+    return olFeatures
 }
 
 
@@ -75,13 +84,14 @@ export const olToJsts = (poly) => {
 
 
 // https://jsfiddle.net/vgrem/4v56xbu8/
-function calcIntersection(lastDrawnPoly, allPolys) {
-    // iterate thought all the polygons and check if they intersect with lastDrawnPoly
+export function calcIntersection(lastDrawnPoly, allPolys) {
     let jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
 
+    // shrink
     let bufferParameters = new BufferParameters();
     jstsLastDrawnPoly = BufferOp.bufferOp(jstsLastDrawnPoly, -.000001, bufferParameters);
 
+    // iterate thought all the polygons and check if they intersect with lastDrawnPoly
     const result = allPolys.filter(function (poly) {
         const curPolygon = olToJsts(poly)
         const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
@@ -89,44 +99,15 @@ function calcIntersection(lastDrawnPoly, allPolys) {
     });
 
     //if new polygon intersects any of exiting ones, draw it with red color
-    if (result.length > 0) {
-        console.log("intersection", result)
-        lastDrawnPoly.setStyle(stylesInvalid)
+    return result.length > 0
+//     if (result.length > 0) {
+//         // console.log("intersection", result)
+//         // lastDrawnPoly.setStyle(stylesInvalid)
+//         return true
+//     } else {
+//         return false
+//     }
     }
-}
 
 
-const stylesInvalid = [
-    new Style({
-        stroke: new Stroke({
-            color: 'red',
-            width: 3,
-        }),
-        fill: new Fill({
-            color: 'rgba(255, 0, 0, 0.2)',
-        }),
-    }),
-    new Style({
-        image: new CircleStyle({
-            radius: 5,
-            fill: new Fill({
-                color: 'red',
-            }),
-        }),
-
-        geometry: function (feature) {
-            // return the coordinates of the first ring of the polygon
-            const coordinates = feature.getGeometry().getCoordinates()[0];
-            return new MultiPoint(coordinates);
-        },
-    }),
-    new Style({
-        fill: new Fill({
-            color: 'rgba(255,255,0,0.1'
-        })
-
-    })
-];
-
-
-export default { polygonDrawend, isValid} ;
+export default { polygonDrawend, isValid, unkinkPolygon, calcIntersection, stylesInvalid} ;

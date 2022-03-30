@@ -34,7 +34,7 @@ import * as  olCoordinate from 'ol/coordinate'
 
 import { letterSpacing } from '@mui/system';
 import simplepolygon from 'simplepolygon';
-import { polygonDrawend, isValid }  from '../res/unkink.js'
+import unkink, { polygonDrawend, isValid, unkinkPolygon, calcIntersection, stylesInvalid }  from '../res/unkink.js'
 
 function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJsonData }) {
     const [map, setMap] = useState();
@@ -357,7 +357,45 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
     const handleDrawend = (evt) => {
         //console.log(Object.keys(evt))
         // call unkink.js
-        polygonDrawend(evt, map)
+        const mapSource = map.getLayers().getArray()[1].getSource()
+        let drawnPolys = [evt.feature]
+        //polygonDrawend(evt, map)
+
+        // check if valid
+        if (!isValid(evt.feature))
+        {
+            console.log(evt.feature)
+            // if not valid unkink
+            // return collection of unkinked polys
+            const unkinkedCollection = unkinkPolygon(evt.feature)
+            // check intersection and add unkinked polys to the source
+            for (let i = 0; i < unkinkedCollection.length; i++)
+            {
+
+                console.log()
+                let intersect = calcIntersection(unkinkedCollection[i][0], mapSource.getFeatures())
+                if(intersect)
+                {
+                    unkinkedCollection[i][0].setStyle(stylesInvalid)
+                }
+                mapSource.addFeatures(unkinkedCollection[i])
+            }
+        }
+        else 
+        {
+            let intersect = calcIntersection(evt.feature, mapSource.getFeatures())
+            if(intersect)
+            {
+                evt.feature.setStyle(stylesInvalid)
+            }
+            // else add last drawn poly
+            mapSource.addFeatures(evt.feature)
+            
+        }
+        // check intersection
+            // if intersection return poly that is invalid
+            // make it red
+        
     }
 
 
@@ -389,6 +427,37 @@ function MapWrapper({ changeSelectedTool, selectTool, changeGeoJsonData, geoJson
         }
     }
 
+    const stylesInvalid = [
+        new Style({
+            stroke: new Stroke({
+                color: 'red',
+                width: 3,
+            }),
+            fill: new Fill({
+                color: 'rgba(255, 0, 0, 0.2)',
+            }),
+        }),
+        new Style({
+            image: new CircleStyle({
+                radius: 5,
+                fill: new Fill({
+                    color: 'red',
+                }),
+            }),
+    
+            geometry: function (feature) {
+                // return the coordinates of the first ring of the polygon
+                const coordinates = feature.getGeometry().getCoordinates()[0];
+                return new MultiPoint(coordinates);
+            },
+        }),
+        new Style({
+            fill: new Fill({
+                color: 'rgba(255,255,0,0.1'
+            })
+    
+        })
+    ];
 
     useEffect(() => {
         if (map) {
