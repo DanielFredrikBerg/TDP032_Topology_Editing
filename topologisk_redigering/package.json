@@ -20,13 +20,13 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "5.0.0",
+    "simplepolygon": "^1.2.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test_mocha": "mocha",
+    "test": "mocha",
     "eject": "react-scripts eject",
     "http": "json-server -p 4000 --watch --no-cors .\\src\\data\\geoJsonExample2.json",
     "httpl": "json-server -p 4000 --watch --no-cors ./src/data/geoJsonExample2.json"

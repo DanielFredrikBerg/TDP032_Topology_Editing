@@ -1,4 +1,4 @@
-import GeoJSON from "ol/format/GeoJSON"
+import GeoJSON from "ol/format/GeoJSON.js"
 
 // new terminal run command :  npm run http (for windows)
     //                            npm run httpl (for linux)

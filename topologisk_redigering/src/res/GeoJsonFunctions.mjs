@@ -23,18 +23,17 @@ import { Polygon } from 'ol/geom.js';
                 "name": "EPSG:3006"
             }
         }
+        return jsonObj
     } 
- 
 
     export const geoJsonToJsts = (geoJson) => {
-        let reader = new GeoJSONReader().read(geoJson)
-        return reader
+        let jsts = new GeoJSONReader().read(geoJson)
+        return jsts
     }
 
     export const jstsToGeoJson = (jstsObject) => {
         let writer = new GeoJSONWriter()
         let featureList = []
-        let jsonObj = new GeoJSON({ projection: "EPSG:3006" })
         if (jstsObject.features) {
             jstsObject.features.forEach(feature => {
                 let writtenGeometry = writer.write(feature.geometry)
@@ -42,14 +41,17 @@ import { Polygon } from 'ol/geom.js';
                 let featureWrapping = new Feature(polygon)
                 featureList.push(featureWrapping)
             });
-            jsonObj = jsonObj.writeFeaturesObject(featureList)
         }
         else {
-            let writtenGeometry = writer.write(jstsObject)
-            let polygon = new Polygon(writtenGeometry.coordinates)
-            let featureWrapping = new Feature(polygon)
-            jsonObj = jsonObj.writeFeatureObject(featureWrapping)
+            jstsObject.forEach(geom => {
+                let writtenGeometry = writer.write(geom)
+                let polygon = new Polygon(writtenGeometry.coordinates)
+                let featureWrapping = new Feature(polygon)
+                featureList.push(featureWrapping)
+            });
         }
+
+        const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(featureList)
 
        
         jsonObj["crs"] = {
@@ -60,6 +62,7 @@ import { Polygon } from 'ol/geom.js';
         }
         return jsonObj
     }
+
 /* 
     const loadGeoJsonData = (map, geoJsonData) => {
         console.log(JSON.stringify(geoJsonData))

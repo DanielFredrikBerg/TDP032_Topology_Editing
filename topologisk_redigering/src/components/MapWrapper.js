@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Feature, Map, View } from 'ol';
+import { Map, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import 'ol/ol.css';
 import VectorLayer from 'ol/layer/Vector';
@@ -9,10 +9,8 @@ import WMTS from 'ol/source/WMTS';
 import { get as getProjection } from 'ol/proj';
 import { getWidth } from 'ol/extent';
 import GeoJSON from 'ol/format/GeoJSON';
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import MultiPoint from 'ol/geom/MultiPoint';
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser";
-import IsValidOp from "jsts/org/locationtech/jts/operation/valid/IsValidOp";
 import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom'
 import { drawPolygon, highlightPolygon } from '../res/UIFunctions';
 import { featuresToGeoJson } from '../res/GeoJsonFunctions'
@@ -20,11 +18,25 @@ import { saveToDatabase, GeoJsonObjToFeatureList, loadPolyFromDB } from '../res/
 import { deleteLatest } from './DeletePolygon'
 import { zoomToLastPolygon } from './ZoomToPolygon'
 import getMergeableFeatures from "../res/jsts.js"
+import { createStringXY } from 'ol/coordinate';
+import MousePosition from 'ol/control/MousePosition'
+import { defaults as defaultControls } from 'ol/control'
+import Header from './Header'
+import { handleIntersections } from '../res/jsts.mjs';
+import { fixOverlaps } from '../res/PolygonHandler.mjs';
+import { Select, Modify } from 'ol/interaction';
+import {click} from "ol/events/condition"
+import {deletePolygon} from '../res/HelperFunctions.mjs'
+import {defaultStyle, selectedStyle, invalidStyle} from '../res/Styles.mjs'
+import { isValid, unkinkPolygon, calcIntersection }  from '../res/unkink.mjs'
 
+import { Snap } from 'ol/interaction.js'
 
 function MapWrapper({geoJsonData}) {
     const [map, setMap] = useState();
     const [currentTool, setCurrentTool] = useState('NONE')
+    //const [selectedPolygon, setSelectedPolygon] = useState()
+    let clickHandlerState = 'NONE';
     const mapElement = useRef();
     const mapRef = useRef();
     mapRef.current = map;
@@ -39,7 +51,6 @@ function MapWrapper({geoJsonData}) {
         resolutions[z] = size / Math.pow(2, z);
         matrixIds[z] = z;
     }
-    
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -58,37 +69,7 @@ function MapWrapper({geoJsonData}) {
     const wmts_3006_resolutions = [4096.0, 2048.0, 1024.0, 512.0, 256.0, 128.0, 64.0, 32.0, 16.0, 8.0];
     const wmts_3006_matrixIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];   
 
-    const styles = [
-        new Style({
-            stroke: new Stroke({
-                color: 'light-blue',
-                width: 3,
-            }),
-            fill: new Fill({
-                color: 'rgba(0, 0, 255, 0.1)',
-            }),
-        }),
-        new Style({
-            image: new CircleStyle({
-                radius: 5,
-                fill: new Fill({
-                    color: 'orange',
-                }),
-            }),
-
-            geometry: function (feature) {
-                // return the coordinates of the first ring of the polygon
-                const coordinates = feature.getGeometry().getCoordinates()[0];
-                return new MultiPoint(coordinates);
-            },
-        }),
-        new Style({
-            fill: new Fill({
-                color: 'rgba(255,255,0,0.1'
-            })
-
-        })
-    ];
+    const select = new Select({condition: click, style:selectedStyle})
 
     const tilegrid = new WMTSTileGrid({
         tileSize: 256,
@@ -123,63 +104,28 @@ function MapWrapper({geoJsonData}) {
 
     const polygonLayer = new VectorLayer({
         source: source,
-        style: styles
+        style: defaultStyle
     });
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
+    //fixes overlaps for the latest polygon added to map
+    const cleanUserInput = (map) => {
+        let newPolygons = fixOverlaps(map)
+            let featureList = (new GeoJSON()).readFeatures(newPolygons) //  GeoJSON.readFeatures(geoJsonData)
+            getSource(map).clear()
+            getSource(map).addFeatures(featureList)
+    }
 
- 
-
-
-    /* useEffect(() => {
-
-        console.log({ changeSelectedTool })
-        if (currTool === 'Add') {
-            drawPolygon()
-        } else if (map) {
-            stopDrawing()
-        }
-
-        if ({ changeSelectedTool }.changeSelectedTool == 'Zoom') {
-            zoomToLastPolygon()
-        }
-        else if ({ changeSelectedTool }.changeSelectedTool == 'Import') {
-            loadPolyFromDB()
-        }
-        else if({changeSelectedTool}.changeSelectedTool == 'Etc'){
-            console.log("0")
-            let testGeoJsonData = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(map.getLayers().getArray()[1].getSource().getFeatures())
-            console.log("1")
-            testGeoJsonData["crs"] = {
-                "type": "name",
-                "properties": {
-                    "name": "EPSG:3006"
-                }
-            }
-            let testJstsData = geoJsonToJsts(testGeoJsonData)
-            debugger
-            checkIntersection(testJstsData.features[0], testJstsData.features[1])
-        }
-        else if ({ changeSelectedTool }.changeSelectedTool == 'Save') {
-            saveToDatabase()
-        }
-        else if ({ changeSelectedTool }.changeSelectedTool == 'Delete') {
-            console.log("deleting")
-            deleteLatest()
-        }
-
-        else if ({ changeSelectedTool }.changeSelectedTool == 'AppVariableImport') {
-            loadGeoJsonData()
-        }
-
-
-    }, [currTool])
- */
+    const mousePositionControl = new MousePosition({
+        coordinateFormat: createStringXY(2),
+        projection: "EPSG:3006",
+    })
 
     useEffect(() => {
        
         const initialMap = new Map({
+            controls: defaultControls().extend([mousePositionControl]),
             target: mapElement.current,
             layers: [
                 swedenMapLayer,
@@ -193,6 +139,10 @@ function MapWrapper({geoJsonData}) {
 
             }),
         });
+        initialMap.addInteraction(select)
+        initialMap.on('click', onMapClickGetPixel)
+        initialMap.addInteraction(new Snap({source: source}))
+        //initialMap.addInteraction(new Modify({source: source, hitDetection: true}))
         setMap(initialMap)
     }, []);
     
@@ -202,26 +152,126 @@ function MapWrapper({geoJsonData}) {
         getMergeableFeatures(parser.read(map.getLayers().getArray()[1].getSource().getFeatures()[0].getGeometry()), map.getLayers().getArray()[1].getSource().getFeatures())
         if(currentTool === 'DRAWEND'){
             setCurrentTool('NONE')
+
+
+    const handleNewPoly = (evt) => {
+        // when add feature check if valid
+        if (!isValid(evt.feature)) {
+            //deleteLatest()
+            map.getLayers().getArray()[1].getSource().removeFeature(evt.feature)
         }
-        else if (currentTool === "NONE"){
-            drawPolygon(map, setCurrentTool)
+      }
+
+    /* Contextual clickhandler, different actions depending on if you click on a polygon or somewhere on the map */
+    const onMapClickGetPixel = (event) => {
+        
+        //console.log("CLICKED: ", getPolygon(event.map, event.pixel))
+        //console.log("SELECTED: ", getSelectedPolygon())
+       // console.log("SOURCE: ", getSource(event.map))
+
+        if(event.map.getFeaturesAtPixel(event.pixel).length > 0){
+            //console.log(event.map.getFeaturesAtPixel(event.pixel)[0].getGeometry().getCoordinates())
         }
-        else {}
+
+        /* Check if clicked on an existing polygon */
+        if (isPolygon(event.map, event.pixel)){
+
+            const clickedPolygon = getPolygon(event.map, event.pixel)
+            const selectedPolygon = getSelectedPolygon()
+            /* This done to make sure correct polygon is deleted. Otherwise the previous one is deleted because of delay. */
+            if (clickedPolygon.ol_uid === selectedPolygon.ol_uid) {
+                deletePolygon(event.map, select.getFeatures().getArray()[0])
+                //event.map.addInteraction(new Modify({features:select.getFeatures()}))
+            }
+            
+
+        } else {
+            if (clickHandlerState === 'DRAWEND') {
+                console.log("Running checks because polygon is finished drawing")
+                //unkink the drawn polygon HERE
+                cleanUserInput(event.map)
+                clickHandlerState = 'NONE'
+            }
+            else if (clickHandlerState === 'NONE'){
+                clickHandlerState = 'DRAW'
+                drawPolygon(event.map).addEventListener('drawend', (evt) => {
+        
+                    handleDrawend(evt, event.map)
+                    clickHandlerState = 'DRAWEND'
+                    //console.log(clickHandlerState)
+                    //console.log(event.map.getInteractions().getArray().length)
+                    event.map.getInteractions().getArray().pop()
+                    //event.map.getInteractions().getArray().pop()
+                    //console.log(event.map.getInteractions().getArray().length)
+                })
+            }
+            else {}
+        }
     }
 
-    useEffect (() => {
-        console.log(currentTool)
-    }, [currentTool])
+    const handleDrawend = (evt, map) => {
+        const mapSource = map.getLayers().getArray()[1].getSource()
 
+        // check if valid
+        if (!isValid(evt.feature))
+        {
+            console.log(evt.feature)
+            // if not valid unkink
+            // return collection of unkinked polys
+            const unkinkedCollection = unkinkPolygon(evt.feature)
+            // check intersection and add unkinked polys to the source
+            console.log(unkinkedCollection)
+            for (let i = 0; i < unkinkedCollection.length; i++)
+            {
+                mapSource.addFeatures(unkinkedCollection[i])
+                cleanUserInput(map)
+            }
+            return unkinkedCollection.length
+        }
+        else 
+        {
+            // else add last drawn poly
+
+            //mapSource.addFeatures(evt.feature)
+            cleanUserInput(map)
+
+            return 1
+        }
+    }
+
+
+    useEffect(() => {
+        if (map) {
+            map.getLayers().getArray()[1].getSource().addEventListener('addfeature', handleNewPoly)
+        }
+    }, [map])
+    
+
+    /* check if we are clicking on a polygon*/
+    const isPolygon = (map, pixel) => {
+        return map.getFeaturesAtPixel(pixel).length > 0 && map.getFeaturesAtPixel(pixel)[0].getGeometry().getType() === "Polygon"
+    }
+   
+    /* get the polygon we are clicking on */
+    const getPolygon = (map, pixel) => {
+        return map.getFeaturesAtPixel(pixel)[0]
+    }
+
+    /* get the polygon marked by select interaction */
+    const getSelectedPolygon = () => {
+        return select.getFeatures().getArray()[0]
+    }
+
+    const getSource = (map) => {
+        return map.getLayers().getArray()[1].getSource()
+    }
 
     return (
         <>
-            
+            <Header currentTool={currentTool} setCurrentTool={setCurrentTool}/>
             <div style={{ height: '100vh', width: '100%' }} 
             ref={mapElement} 
-            className="map-container"
-            onClick={onMapClickHandler}
-            >                
+            className="map-container">                
             </div>
         </>
     );
