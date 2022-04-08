@@ -25,6 +25,7 @@ export const handleIntersections = (jstsNewGeometry, jstsOtherGeometries) => {
     return jstsNewGeometry
 }
 
+//takes a JSTSpolygon and a list of Openlayers features and returns a JSTS featurelist
 export default function getMergeableFeatures(selectedPolygon, allFeatures) { //= map.getLayers().getArray()[1].getSource().getFeatures()) => {
 
   const parser = new OL3Parser();
@@ -69,7 +70,7 @@ export default function getMergeableFeatures(selectedPolygon, allFeatures) { //=
   const resultCleaned = result.filter(function(poly) {
       const curPolygon = parser.read(poly.getGeometry())
       let x = jstsToGeoJson([curPolygon]).features[0]
-      debugger
+      //debugger
       return polygonsAreConnected(jstsToGeoJson([curPolygon]).features[0], jstsToGeoJson([selectedPolygon]).features[0])
   })
 
@@ -86,6 +87,10 @@ export default function getMergeableFeatures(selectedPolygon, allFeatures) { //=
   console.log("finished mergeable with: ", jstsFeatureList)
   return jstsFeatureList;
 }
-
-
+//takes jsts geometries and return the union in jstsgeometry format
+export function mergeFeatures(firstGeometry, secondGeometry){
+  let x = OverlayOp.union(firstGeometry, secondGeometry)
+  console.log("the things",x)
+  return x
+}
 

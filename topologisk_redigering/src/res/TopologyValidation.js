@@ -79,13 +79,8 @@ class Line {
       var lines = []
   
       // follow the points around the edge of the polygon and calculate line between each pair of points
-      //console.log("# of coordinates in geometry: " + polygon.geometry.coordinates[0].length)
-      //console.log(polygon.geometry.coordinates[0])
 
-
-      //TODO: move quickfix to jsts.mjs on call. 
-      //debugger
-      debugger
+      //
       for (let i = 0; i < polygon.geometry.coordinates[0].length - 1; i++) {
         const coordinate1 = polygon.geometry.coordinates[0][i]
         const coordinate2 = polygon.geometry.coordinates[0][i+1]
@@ -164,7 +159,7 @@ class Line {
     }
   
     export default function polygonsAreConnected(polygon1, polygon2) {
-        debugger
+        //debugger
       // if they have a common side.
       // => if two points from one polygon1, and two points from polygon2 make 
       //    up two lines that overlap at some interval.

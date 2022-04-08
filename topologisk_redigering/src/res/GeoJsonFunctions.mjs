@@ -32,7 +32,7 @@ import { Polygon } from 'ol/geom.js';
     }
 
 
-    //takes a featureCollection or an array of geometries and returns a jsts featurelist
+    //takes a featureCollection or an array of geometries and returns a jsts featurelist !REQUIRES USE OF .features can not use normal indexing
     export const jstsToGeoJson = (jstsObject) => {
 
         //debugger
