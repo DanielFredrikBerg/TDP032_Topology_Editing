@@ -1,13 +1,23 @@
-import { jstsToGeoJson } from "./GeoJsonFunctions.js"
-import getMergeableFeatures, { handleIntersections, mergeFeatures } from "./jsts.js"
+import { jstsToGeoJson } from "./GeoJsonFunctions.mjs"
+import getMergeableFeatures, { handleIntersections, mergeFeatures } from "./jsts.mjs"
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser.js"
 import {  Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom.js'
 import { Overlay } from "ol"
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
 
-const featuresToJstsGeometryCollection = (features) => {
 
-    //console.log("FEATURES_TO_JSTS",features)
+/* 
+{
+  type: 'FeatureCollection',
+  features: 
+  [
+    { type: 'Feature', geometry: [Object], properties: null },
+    { type: 'Feature', geometry: [Object], properties: null }
+  ],
+  crs: { type: 'name', properties: { name: 'EPSG:3006' } }
+}
+*/
+const featuresToJstsGeometryCollection = (geoJSONobject) => {
 
     const parser = new OL3Parser();
     parser.inject(
@@ -20,18 +30,22 @@ const featuresToJstsGeometryCollection = (features) => {
     );
 
     let jstsCollection = []
-    features.forEach(function temp(feature) {
+    geoJSONobject.forEach(function temp(feature) {
         let x = parser.read(feature.getGeometry())
+        //console.log("\n",x)
+        //console.log(x.isEmpty())
         jstsCollection.push(x)
     })
 
     return jstsCollection
 } 
 
-//takes map as input and trimms last drawn polygon
-export const fixOverlaps = (features) => {
 
-    let jstsCollection = featuresToJstsGeometryCollection(features)
+
+//takes map as input and trimms last drawn polygon
+export const fixOverlaps = (geoJSONobject) => {
+
+    let jstsCollection = featuresToJstsGeometryCollection(geoJSONobject)
 
     //TODO: OL3parser => uppdelat i olika översättningar
     
@@ -50,6 +64,7 @@ export const fixOverlaps = (features) => {
             cleanedJstsCollection.push(trimmed)
         }
 
+        //console.log(cleanedJstsCollection)
         return jstsToGeoJson(cleanedJstsCollection)
     
 }

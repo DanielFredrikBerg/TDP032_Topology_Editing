@@ -1,12 +1,23 @@
-const test = require('tape')
-import './testmodules.mjs'
+import test from 'tape'
+import { unkinkPolygon } from '../src/res/unkink.mjs'
+import { completeGeoJson} from '../src/res/GeoJsonFunctions.mjs'
+import GeoJSON from 'ol/format/GeoJSON.js'
+import assert from 'assert'
+import _ from 'lodash'
+import {fixOverlaps} from '../src/res/PolygonHandler.mjs'
+
+/* 
+  Why Import?
+  We have tried using require and .js files. This doesn't work because there is a problem with our libraries
+  since they use import.
+
+  DON'T CHANGE! WE HAVE TRIED AND FAILED SEVERAL TIMES!!!
+*/
 
 test('Should return -1 when the value is not present in Array', function (t) {
   t.equal(-1, [1,2,3].indexOf(4))
   t.end()
 })
-
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -116,10 +127,9 @@ const overlapPolygons = {
   }]
 }
 
-const unkinkedPolygon = unkinkPolygon(geoToOl(hourglassBefore)[0])
-const cleanedOverlap = fixOverlaps(featuresToGeoJson(new GeoJSON().readFeatures(overlapPolygons)));
+const cleanedOverlap = fixOverlaps(new GeoJSON().readFeatures(overlapPolygons));
 
-//[[[0,0], [1,0], [1,1], [0,1], [0,0]], [[1,0], [2,0], [2,1], [1,1], [1,0]], [[2,0], [3,0], [3,1], [2,1], [2,0]]]
+//[[[0,0], [2,0], [2,1], [0,1], [0,0]], [[2,0], [2,1], [3,1], [3,0], [2,0]]]
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,9 +142,13 @@ const geoToOl = (geo) => {
 
 }
 
+const unkinkedPolygon = unkinkPolygon(geoToOl(hourglassBefore)[0])
+
+
 //indata ol feature, utdata array med koordinat-arrayer
-const testGetFeatureCoordinates = (features, f = 0) => {
-  return features[f].getGeometry().getCoordinates()[0]
+const testGetFeatureCoordinates = (feature) => {
+  console.log(feature)
+  return feature[0].getGeometry().getCoordinates()[0]
 }
 
 //indata GeoJSON, utdata array med koordinat-arrayer
@@ -170,11 +184,18 @@ test('Should return -1 when the value is not present in Array', function (t) {
 
 /*Testing coordinates */
 test('Should return matching coordinates',function(t) {
-  t.equal(testGetFeatureCoordinates(unkinkedPolygon[0]), [[0,0],[2,0],[1,1],[0,0]])
-  t.equal(testGetFeatureCoordinates(unkinkedPolygon[1]), [[1,1],[0,2],[2,2],[1,1]])
+  t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(unkinkedPolygon[0]), [[0,0],[2,0],[1,1],[0,0]]), true)
+  t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(unkinkedPolygon[1]), [[1,1],[0,2],[2,2],[1,1]]), true)
   t.end()
 })
 
+//[[[0,0], [2,0], [2,1], [0,1], [0,0]], [[2,0], [2,1], [3,1], [3,0], [2,0]]]
+test('Should return 2 polygons', function(t) {
+  //console.log("CLEANES", cleanedOverlap)
+  t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(cleanedOverlap[0]), [[0,0], [2,0], [2,1], [0,1], [0,0]]))
+  t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(cleanedOverlap[1]), [[2,0], [3,0], [3,1], [2,1], [2,0]]))
+  t.end()
+})
 
 /*
 describe('Compare coordinates', function () {

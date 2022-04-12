@@ -12,10 +12,20 @@ import { Polygon } from 'ol/geom.js';
         return (new GeoJSON()).readFeatures(geoJsonData)
     }
 
-     export const featuresToGeoJson = (map) => {
-        let features = [];
+    export const completeGeoJson = (geoJSONObject) => {
+                geoJSONObject["crs"] = {
+                    "type": "name",
+                    "properties": {
+                        "name": "EPSG:3006"
+                    }
+                }
+                return geoJSONObject
+            } 
+
+     export const featuresToGeoJson = (features) => {
+/*        let features = [];
         if (map) {features = getFeatureList(map) }
-        else {features = []}
+        else {features = []} */
         const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(features)
         jsonObj["crs"] = {
             "type": "name",
@@ -35,6 +45,8 @@ import { Polygon } from 'ol/geom.js';
     //takes a featureCollection or an array of geometries and returns a jsts featurelist !REQUIRES USE OF .features can not use normal indexing
     export const jstsToGeoJson = (jstsObject) => {
 
+
+        console.log("JSTS",jstsObject)
         //debugger
     
         let writer = new GeoJSONWriter()
@@ -65,6 +77,7 @@ import { Polygon } from 'ol/geom.js';
                 "name": "EPSG:3006"
             }
         }
+        console.log("JSTStoGEO", jsonObj)
         return jsonObj
     }
 
