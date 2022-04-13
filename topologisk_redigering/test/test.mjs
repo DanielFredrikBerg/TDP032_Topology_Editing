@@ -1,6 +1,6 @@
 import test from 'tape'
 import { unkinkPolygon } from '../src/res/unkink.mjs'
-import { completeGeoJson} from '../src/res/GeoJsonFunctions.mjs'
+import { geoJsonToJsts} from '../src/Translations/Translators.mjs'
 import GeoJSON from 'ol/format/GeoJSON.js'
 import assert from 'assert'
 import _ from 'lodash'
@@ -18,7 +18,7 @@ import {fixOverlaps} from '../src/res/PolygonHandler.mjs'
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*Variables*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
+
 const gj = {
   "type": "FeatureCollection",
   "features": [
@@ -130,7 +130,7 @@ const cleanedOverlap = fixOverlaps(overlapPolygons);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*Functions*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
+
 const geoToOl = (geo) => {
   const newGeo = new GeoJSON().readFeatures(geo)
   return newGeo
@@ -149,7 +149,7 @@ const testGetFeatureCoordinates = (feature) => {
 const testGetGeoJsonCoordinate = (geojson, f = 0) => {
   return geojson.features[f].geometry.coordinates[0]
 }
-*/
+
 export const coordinatesAreEquivalent = (coordinateArray1, coordinateArray2) => {
   let i = 0;
   while (coordinateArray2[i] && JSON.stringify(coordinateArray1[0]) != JSON.stringify(coordinateArray2[i])) {
@@ -166,7 +166,7 @@ export const coordinatesAreEquivalent = (coordinateArray1, coordinateArray2) => 
   return true
 }
 
-/*
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*Tests*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,7 +179,7 @@ test('Should return -1 when the value is not present in Array', function (t) {
 }) */
 
 /*Testing coordinates */
-/*
+
 test('Should return matching coordinates',function(t) {
   t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(unkinkedPolygon[0]), [[0,0],[2,0],[1,1],[0,0]]), true)
   t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(unkinkedPolygon[1]), [[1,1],[0,2],[2,2],[1,1]]), true)
@@ -192,6 +192,10 @@ test('Should return 2 polygons', function(t) {
   t.assert(coordinatesAreEquivalent(testGetGeoJsonCoordinate(cleanedOverlap,1), [[2,1], [3,1], [3,0], [2,0], [2,1]]), true)
   t.end()
 }) 
+
+test('What is this?', function(t) {
+  console.log(geoJsonToJsts(gj))
+})
 
 /*
 describe('Compare coordinates', function () {
