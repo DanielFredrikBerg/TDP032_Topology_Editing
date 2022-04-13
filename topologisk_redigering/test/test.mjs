@@ -18,7 +18,7 @@ import {fixOverlaps} from '../src/res/PolygonHandler.mjs'
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*Variables*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
 const gj = {
   "type": "FeatureCollection",
   "features": [
@@ -130,7 +130,7 @@ const cleanedOverlap = fixOverlaps(overlapPolygons);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*Functions*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
 const geoToOl = (geo) => {
   const newGeo = new GeoJSON().readFeatures(geo)
   return newGeo
@@ -149,8 +149,8 @@ const testGetFeatureCoordinates = (feature) => {
 const testGetGeoJsonCoordinate = (geojson, f = 0) => {
   return geojson.features[f].geometry.coordinates[0]
 }
- 
-const coordinatesAreEquivalent = (coordinateArray1, coordinateArray2) => {
+*/
+export const coordinatesAreEquivalent = (coordinateArray1, coordinateArray2) => {
   let i = 0;
   while (coordinateArray2[i] && JSON.stringify(coordinateArray1[0]) != JSON.stringify(coordinateArray2[i])) {
     i++;
@@ -166,17 +166,20 @@ const coordinatesAreEquivalent = (coordinateArray1, coordinateArray2) => {
   return true
 }
 
+/*
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*Tests*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //trial test
-/* test('Should return -1 when the value is not present in Array', function (t) {
+/*
+test('Should return -1 when the value is not present in Array', function (t) {
   t.equal(-1, [1,2,3].indexOf(4))
   t.end()
 }) */
 
 /*Testing coordinates */
+/*
 test('Should return matching coordinates',function(t) {
   t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(unkinkedPolygon[0]), [[0,0],[2,0],[1,1],[0,0]]), true)
   t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(unkinkedPolygon[1]), [[1,1],[0,2],[2,2],[1,1]]), true)
