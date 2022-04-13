@@ -2,7 +2,7 @@ import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser.js";
 import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom.js'
 import polygonsAreConnected from "./TopologyValidation.mjs"
-import { jstsToGeoJson } from './GeoJsonFunctions.mjs';
+import { jstsToGeoJson } from './Translators.mjs';
 
 
 

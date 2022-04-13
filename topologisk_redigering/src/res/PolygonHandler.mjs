@@ -1,4 +1,4 @@
-import { jstsToGeoJson } from "./GeoJsonFunctions.mjs"
+import { geoJsonToJsts, jstsToGeoJson } from "./Translators.mjs"
 import getMergeableFeatures, { handleIntersections, mergeFeatures } from "./jsts.mjs"
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser.js"
 import {  Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom.js'
@@ -11,7 +11,7 @@ import GeoJSON from "ol/format/GeoJSON.js"
 
 const geoJSONToJstsGeometryCollection = (geoJSON) => {
 
-    const features = new GeoJSON().readFeatures(geoJSON)
+    const features = geoJsonToJsts(geoJSON)
     const parser = new OL3Parser()
     parser.inject(
         Point,

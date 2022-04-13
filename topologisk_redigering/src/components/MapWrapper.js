@@ -24,7 +24,7 @@ import {click} from "ol/events/condition"
 import {deletePolygon} from '../res/HelperFunctions.mjs'
 import {defaultStyle, selectedStyle, invalidStyle} from '../res/Styles.mjs'
 import { isValid, unkinkPolygon, calcIntersection }  from '../res/unkink.mjs'
-import { featuresToGeoJson } from '../res/GeoJsonFunctions.mjs';
+import { featuresToGeoJson } from '../res/Translators.mjs';
 
 
 function MapWrapper({geoJsonData}) {
