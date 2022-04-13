@@ -13,12 +13,6 @@ import {fixOverlaps} from '../src/res/PolygonHandler.mjs'
 
   DON'T CHANGE! WE HAVE TRIED AND FAILED SEVERAL TIMES!!!
 */
-/*
-test('Should return -1 when the value is not present in Array', function (t) {
-  t.equal(-1, [1,2,3].indexOf(4))
-  t.end()
-})
-*/
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +122,7 @@ const overlapPolygons = {
   }]
 }
 
-const cleanedOverlap = fixOverlaps(new GeoJSON().readFeatures(overlapPolygons));
+const cleanedOverlap = fixOverlaps(overlapPolygons);
 
 //[[[0,0], [2,0], [2,1], [0,1], [0,0]], [[2,0], [2,1], [3,1], [3,0], [2,0]]]
 
@@ -148,7 +142,6 @@ const unkinkedPolygon = unkinkPolygon(geoToOl(hourglassBefore)[0])
 
 //indata ol feature, utdata array med koordinat-arrayer
 const testGetFeatureCoordinates = (feature) => {
-  console.log(feature)
   return feature[0].getGeometry().getCoordinates()[0]
 }
 
@@ -183,7 +176,7 @@ export const coordinatesAreEquivalent = (coordinateArray1, coordinateArray2) => 
 test('Should return -1 when the value is not present in Array', function (t) {
   t.equal(-1, [1,2,3].indexOf(4))
   t.end()
-})
+}) */
 
 /*Testing coordinates */
 /*
@@ -195,11 +188,10 @@ test('Should return matching coordinates',function(t) {
 
 //[[[0,0], [2,0], [2,1], [0,1], [0,0]], [[2,0], [2,1], [3,1], [3,0], [2,0]]]
 test('Should return 2 polygons', function(t) {
-  //console.log("CLEANES", cleanedOverlap)
-  t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(cleanedOverlap[0]), [[0,0], [2,0], [2,1], [0,1], [0,0]]))
-  t.assert(coordinatesAreEquivalent(testGetFeatureCoordinates(cleanedOverlap[1]), [[2,0], [3,0], [3,1], [2,1], [2,0]]))
+  t.assert(coordinatesAreEquivalent(testGetGeoJsonCoordinate(cleanedOverlap,0), [[0,0], [2,0], [2,1], [0,1], [0,0]]), true)
+  t.assert(coordinatesAreEquivalent(testGetGeoJsonCoordinate(cleanedOverlap,1), [[2,1], [3,1], [3,0], [2,0], [2,1]]), true)
   t.end()
-})
+}) 
 
 /*
 describe('Compare coordinates', function () {
