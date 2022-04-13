@@ -4,22 +4,15 @@ import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser.js"
 import {  Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom.js'
 import { Overlay } from "ol"
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
+import GeoJSONReader from 'jsts/org/locationtech/jts/io/GeoJSONReader.js'
+import GeoJSON from "ol/format/GeoJSON.js"
 
 
-/* 
-{
-  type: 'FeatureCollection',
-  features: 
-  [
-    { type: 'Feature', geometry: [Object], properties: null },
-    { type: 'Feature', geometry: [Object], properties: null }
-  ],
-  crs: { type: 'name', properties: { name: 'EPSG:3006' } }
-}
-*/
-const featuresToJstsGeometryCollection = (geoJSONobject) => {
 
-    const parser = new OL3Parser();
+const geoJSONToJstsGeometryCollection = (geoJSON) => {
+
+    const features = new GeoJSON().readFeatures(geoJSON)
+    const parser = new OL3Parser()
     parser.inject(
         Point,
         LineString,
@@ -30,11 +23,9 @@ const featuresToJstsGeometryCollection = (geoJSONobject) => {
     );
 
     let jstsCollection = []
-    geoJSONobject.forEach(function temp(feature) {
-        let x = parser.read(feature.getGeometry())
-        //console.log("\n",x)
-        //console.log(x.isEmpty())
-        jstsCollection.push(x)
+    features.forEach(function temp(feature) {
+        let geometry = parser.read(feature.getGeometry())
+        jstsCollection.push(geometry)
     })
 
     return jstsCollection
@@ -43,11 +34,10 @@ const featuresToJstsGeometryCollection = (geoJSONobject) => {
 
 
 //takes map as input and trimms last drawn polygon
-export const fixOverlaps = (geoJSONobject) => {
+export const fixOverlaps = (geoJSON) => {
 
-    let jstsCollection = featuresToJstsGeometryCollection(geoJSONobject)
-
-    //TODO: OL3parser => uppdelat i olika översättningar
+    //console.log(geoJSON)
+    let jstsCollection = geoJSONToJstsGeometryCollection(geoJSON)
     
         let trimmed = handleIntersections(jstsCollection[jstsCollection.length - 1], jstsCollection.slice(0, jstsCollection.length - 1))
         let cleanedJstsCollection = jstsCollection.slice(0, jstsCollection.length - 1)
@@ -64,7 +54,6 @@ export const fixOverlaps = (geoJSONobject) => {
             cleanedJstsCollection.push(trimmed)
         }
 
-        //console.log(cleanedJstsCollection)
         return jstsToGeoJson(cleanedJstsCollection)
     
 }

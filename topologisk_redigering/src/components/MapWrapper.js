@@ -24,6 +24,7 @@ import {click} from "ol/events/condition"
 import {deletePolygon} from '../res/HelperFunctions.mjs'
 import {defaultStyle, selectedStyle, invalidStyle} from '../res/Styles.mjs'
 import { isValid, unkinkPolygon, calcIntersection }  from '../res/unkink.mjs'
+import { featuresToGeoJson } from '../res/GeoJsonFunctions.mjs';
 
 
 function MapWrapper({geoJsonData}) {
@@ -108,7 +109,8 @@ function MapWrapper({geoJsonData}) {
         
         if(getFeatureList(map).length > 0)
         {
-            let newPolygons = fixOverlaps(getFeatureList(map))
+            const geo = featuresToGeoJson(getFeatureList(map))
+            let newPolygons = fixOverlaps(geo)
             let featureList = (new GeoJSON()).readFeatures(newPolygons) //  GeoJSON.readFeatures(geoJsonData)
             getSource(map).clear()
             getSource(map).addFeatures(featureList) 

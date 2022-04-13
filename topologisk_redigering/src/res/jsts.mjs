@@ -1,8 +1,5 @@
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
-import GeoJSONReader from 'jsts/org/locationtech/jts/io/GeoJSONReader.js'
 import OL3Parser from "jsts/org/locationtech/jts/io/OL3Parser.js";
-import BufferParameters from "jsts/org/locationtech/jts/operation/buffer/BufferParameters.js"
-import BufferOp from "jsts/org/locationtech/jts/operation/buffer/BufferOp.js"
 import { Point, LineString, LinearRing, Polygon, MultiLineString, MultiPolygon } from 'ol/geom.js'
 import polygonsAreConnected from "./TopologyValidation.mjs"
 import { jstsToGeoJson } from './GeoJsonFunctions.mjs';
@@ -18,11 +15,9 @@ export const checkIntersection = (jstsGeometryA, jstsGeometryB) => {
 export const handleIntersections = (jstsNewGeometry, jstsOtherGeometries) => {
     
     jstsOtherGeometries.forEach(jstsGeometry => {
-        //console.log(jstsNewGeometry)
         jstsNewGeometry = OverlayOp.difference(jstsNewGeometry, jstsGeometry) 
     });
 
-    //console.log("JSTSNEWGEOM: ", jstsNewGeometry)
     return jstsNewGeometry
 }
 

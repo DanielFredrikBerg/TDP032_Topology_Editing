@@ -23,9 +23,7 @@ import { Polygon } from 'ol/geom.js';
             } 
 
      export const featuresToGeoJson = (features) => {
-/*        let features = [];
-        if (map) {features = getFeatureList(map) }
-        else {features = []} */
+        
         const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(features)
         jsonObj["crs"] = {
             "type": "name",
@@ -46,7 +44,7 @@ import { Polygon } from 'ol/geom.js';
     export const jstsToGeoJson = (jstsObject) => {
 
 
-        console.log("JSTS",jstsObject)
+        //console.log("JSTS",jstsObject)
         //debugger
     
         let writer = new GeoJSONWriter()
@@ -77,7 +75,7 @@ import { Polygon } from 'ol/geom.js';
                 "name": "EPSG:3006"
             }
         }
-        console.log("JSTStoGEO", jsonObj)
+        //console.log(jsonObj)
         return jsonObj
     }
 
