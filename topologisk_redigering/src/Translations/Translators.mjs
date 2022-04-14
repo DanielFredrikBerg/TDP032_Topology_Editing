@@ -12,7 +12,7 @@ export const listOfOlFeaturesToFeatureCollection = (features) => {
 } 
 
 
-export const geoJsonToJsts = (feature) => {
+export const featureToJstsgeometry = (feature) => {
     const reader = new GeoJSONReader()
     let jsts = reader.read(feature)
     return jsts.features[0].geometry
