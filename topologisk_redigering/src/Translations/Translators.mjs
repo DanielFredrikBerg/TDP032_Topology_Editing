@@ -20,7 +20,7 @@ export const featureToJstsgeometry = (feature) => {
 
 
 //takes an array of geometries and returns a FeatureCollection 
-export const jstsToGeoJson = (jstsObject) => {
+export const jstsToFeatureCollection = (jstsObject) => {
     //console.log("JSTS",jstsObject)
     //debugger
 
@@ -45,7 +45,6 @@ export const jstsToGeoJson = (jstsObject) => {
     }
 
     const jsonObj = new GeoJSON({ projection: "EPSG:3006" }).writeFeaturesObject(featureList)
-    //console.log(jsonObj)
     return jsonObj
 }
 
