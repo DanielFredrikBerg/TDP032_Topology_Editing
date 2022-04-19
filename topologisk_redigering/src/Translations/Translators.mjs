@@ -23,6 +23,8 @@ import { Polygon } from 'ol/geom.js';
 
 /* Takes a full GeoJSON object and returns a GeoJSON FeatureCollection */
 export const fullGeoJson2GeoJsonFeatureCollection = (fullGeoJson) => {
+    delete fullGeoJson["crs"]
+    return fullGeoJson
     //return featureCollection
 }
 
