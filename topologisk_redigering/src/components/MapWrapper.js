@@ -25,6 +25,11 @@ import SaveIcon from '@mui/icons-material/Save';
 import { Button } from '@mui/material';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Polygon } from 'ol/geom';
+import DoubleClickZoom from 'ol/interaction/DoubleClickZoom';
+
+
+
+
 
 
 function MapWrapper() {
@@ -40,6 +45,7 @@ function MapWrapper() {
     const size = getWidth(projectionExtent) / 256;
     const resolutions = new Array(19);
     const matrixIds = new Array(19);
+
 
     for (let z = 0; z < 19; ++z) {
         //generate resolutions and matrixIds arrays for this WMTS
@@ -146,6 +152,7 @@ function MapWrapper() {
     }
 
     useEffect(() => {
+        
         const initialMap = new Map({
             controls: defaultControls().extend([mousePositionControl]),
             target: mapElement.current,
@@ -157,8 +164,7 @@ function MapWrapper() {
                 center: [609924.45, 6877630.37],
                 zoom: 9,
                 minZoom: 5.8,
-                maxZoom: 17,
-
+                maxZoom: 25,
             }),
         });
         const featurelist = getFeatureList(initialMap)
@@ -171,6 +177,20 @@ function MapWrapper() {
         initialMap.on('click', onMapClickGetPixel) // can I get closest pixel from here?
         initialMap.addInteraction(modify)
         modify.on('modifyend', handleModifyend)
+
+        let dblClickInteraction;
+        // find DoubleClickZoom interaction
+        initialMap.getInteractions().getArray().forEach(function(interaction) {
+            if (interaction instanceof DoubleClickZoom) {
+                initialMap.removeInteraction(interaction);
+                console.log(DoubleClickZoom.name)
+            }
+            //dblClickInteraction = interaction;
+        }
+        )
+        // remove from map
+        initialMap.removeInteraction(dblClickInteraction);
+
         setMap(initialMap)
     }, []);
 
@@ -219,8 +239,8 @@ function MapWrapper() {
     const merge = (map) => {
         const featureList = olFeatures2GeoJsonFeatureCollection(getFeatureList(map))
         let newPoly = handleMerge(olFeature2geoJsonFeature(currentClickedPolygon), olFeature2geoJsonFeature(previousClickedPolygon),featureList)
-    
-        if(newPoly !== -1){
+        console.log(newPoly)
+        if(newPoly !== -1 ){//&& newPoly.geometry.coordinates.length == 1){
             let OlPoly = (new GeoJSON()).readFeature(newPoly)
             deletePolygon(map, currentClickedPolygon)
             deletePolygon(map, previousClickedPolygon)
