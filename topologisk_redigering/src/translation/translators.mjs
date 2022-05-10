@@ -154,3 +154,14 @@ export const geoJsonFeatureList2geoJsonFeatureCollection = (geoJsonFeatureList) 
    return featureCollection
 }
 
+export const olFeature2Jsts = (olFeature) => {
+    const geoJsonFeature = olFeature2geoJsonFeature(olFeature)
+    return geoJsonFeature2JstsGeometry(geoJsonFeature)
+}
+
+
+export const jstsGemetry2ol = (geometry) => {
+    const geoJsonFeature = jstsGeometry2GeoJsonFeature(geometry)
+    return geoJsonFeature2olFeature(geoJsonFeature)
+}
+

@@ -57,4 +57,58 @@ export const selectedStyle = [
         color: 'rgba(0,157,71,0.3)'
       })
     })
+
+    
+];
+
+export const invalidStyle = [
+    new Style({
+        stroke: new Stroke({
+            color: 'light-blue',
+            width: 3,
+        }),
+        fill: new Fill({
+            color: 'rgba(40, 40, 255, 0.1)',
+        }),
+    }),
+    new Style({
+        image: new NodeStyle({
+            radius: 5,
+            fill: new Fill({
+                color: 'red',
+            }),
+        }),
+    }),
+    new Style({
+      fill: new Fill({
+        color: 'red'
+      })
+    })
+];
+
+
+
+export const invalidStyle2 = [
+    new Style({
+        stroke: new Stroke({
+            color: 'light-blue',
+            width: 3,
+        }),
+        fill: new Fill({
+            color: 'rgba(40, 40, 255, 0.1)',
+        }),
+    }),
+    new Style({
+        image: new NodeStyle({
+            radius: 5,
+            fill: new Fill({
+                color: 'green',
+            }),
+        }),
+    }),
+    new Style({
+      fill: new Fill({
+        color: 'green'
+      })
+    })
 ];
