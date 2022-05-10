@@ -178,18 +178,15 @@ function MapWrapper() {
         initialMap.addInteraction(modify)
         modify.on('modifyend', handleModifyend)
 
-        let dblClickInteraction;
-        // find DoubleClickZoom interaction
+       
+        // remove DoubleClickZoom interaction from the map
         initialMap.getInteractions().getArray().forEach(function(interaction) {
             if (interaction instanceof DoubleClickZoom) {
                 initialMap.removeInteraction(interaction);
                 console.log(DoubleClickZoom.name)
             }
-            //dblClickInteraction = interaction;
         }
         )
-        // remove from map
-        initialMap.removeInteraction(dblClickInteraction);
 
         setMap(initialMap)
     }, []);
