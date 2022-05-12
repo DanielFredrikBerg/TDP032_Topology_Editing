@@ -50,21 +50,18 @@ export const isValid = (geoJsonFeature) => {
  * @lastDrawnPoly = openlayers feature
  * @allPolys = openlayer features
  */
-export function calcIntersection(lastDrawnPoly, allPolys) {
-    let jstsLastDrawnPoly = olToJsts(lastDrawnPoly)
+export function calcIntersection(poly1, poly2) {
+    let jstsLastDrawnPoly = olToJsts(poly1)
     // shrink polygon by tiny amount otherwise it will count as intersect
     // if two polygons share a point on a border
     let bufferParameters = new BufferParameters();
     jstsLastDrawnPoly = BufferOp.bufferOp(jstsLastDrawnPoly, -.000001, bufferParameters);
 
     // iterate thought all the polygons and check if they intersect with lastDrawnPoly
-    const result = allPolys.filter(function (poly) {
-        const curPolygon = olToJsts(poly)
-        const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
-        return intersection.isEmpty() === false;
-    });
-
-    return result.length > 0
+    const curPolygon = olToJsts(poly2)
+    const intersection = OverlayOp.intersection(curPolygon, jstsLastDrawnPoly);
+    console.log("intersection", intersection)
+    return intersection.isEmpty() === false
 }
 
 

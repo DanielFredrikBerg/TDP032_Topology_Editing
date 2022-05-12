@@ -269,7 +269,6 @@ function MapWrapper() {
 
 
     const handleModifyStart = (event) => {
-        console.log(event.features.getArray()[0].getGeometry().getCoordinates())
         // have to do unecessary conversion in order to actually save the current state of the polygon
         // otherwise beforemod becomes just a reference.
         if(event.features.getArray().length > 1)
@@ -277,10 +276,6 @@ function MapWrapper() {
             beforeMod1 = olFeature2geoJsonFeature(event.features.getArray()[event.features.getArray().length - 1])
             beforeMod2 = olFeature2geoJsonFeature(event.features.getArray()[event.features.getArray().length - 2])
         }
-        // last poly?
-
-        
-        // in the triangle exampe moving the node in the middle will give us two polygons check the console log
     }
 
 
@@ -288,65 +283,35 @@ function MapWrapper() {
         let features = event.features.getArray()
         let source2 = getSource(event.target.map_)
 
-        // features.forEach((latestFeature) => {
-        //     event.target.map_.getLayers().getArray()[1].getSource().removeFeature(latestFeature)
-        // })
+        features.forEach((latestFeature) => {
+            event.target.map_.getLayers().getArray()[1].getSource().removeFeature(latestFeature)
+        })
 
         
-        //remove the latest modified features temporarily from the map source.
-        features.forEach((latestFeature) => {
-            if(!isValid(olFeature2geoJsonFeature(latestFeature)))
+        for (let i = 0; i<features.length; i++) {
+            if(!isValid(olFeature2geoJsonFeature(features[i])))
             {
-                source2.removeFeature(latestFeature)
-
+                features.splice()
+                console.log("I AM INVALID G")
                 beforeMod1 = geoJsonFeature2olFeature(beforeMod1)
                 beforeMod2 = geoJsonFeature2olFeature(beforeMod2)
 
                 const jsts1 = olFeature2Jsts(beforeMod1)
                 const jsts2 = olFeature2Jsts(beforeMod2)
         
-                const jsts = mergeFeatures(jsts1, jsts2)
-
+                const combinedPoly = jstsGemetry2ol(mergeFeatures(jsts1, jsts2))
         
-                source2.addFeature(jstsGemetry2ol(jsts))
+                source2.addFeature(combinedPoly)
 
                 cleanUserInput(event.target.map_)
+                // check if the lsat to polygons in the map
+                // intersect wtih combined poly
+                // delete the done that doesnt intersect
+            } else {
+                //source2.addFeature(latestFeature)
+                //cleanUserInput(event.target.map_)
             }
-        })
-
-        features.forEach((feature) => {
-            //source2.addFeature(feature)
-            cleanUserInput(event.target.map_)
-        })
-
-
-        // let source2 = getSource(event.target.map_)
-        // for(let i=0; i<features.length; i++)
-        // {
-        //     // check if unkink creates the hidden polygon
-        //     // fill new polygons from unkink with red
-        //     if(!isValid(olFeature2geoJsonFeature(features[i])))
-        //     {
-        //         let geoJsonCollection = unkink(olFeature2geoJsonFeature(features[i]))
-        //         source2.removeFeature(features[i])
-        //         for (let index = 0; index < geoJsonCollection.features.length; index++) {
-        //             const geoJsonfeature = geoJsonCollection.features[index];
-        //             source2.addFeature(geoJsonFeature2olFeature(geoJsonfeature))
-        //             cleanUserInput(event.target.map_)
-        //         }
-        //     }
-        // }
-        
-        // features.forEach((feature) => {
-        //     source2.addFeature(feature)
-        //     cleanUserInput(event.target.map_)
-        // })
-        
-        
-        // erros to cry about
-            // unable to assign hole to a shell wut??
-            // side location conflict
-            // found non-noded intersection 
+        }
     }
 
     const handleNewPoly = (evt) => {
