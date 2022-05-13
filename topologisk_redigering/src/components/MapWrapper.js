@@ -287,11 +287,14 @@ function MapWrapper() {
             event.target.map_.getLayers().getArray()[1].getSource().removeFeature(latestFeature)
         })
 
+
+
+
         
         for (let i = 0; i<features.length; i++) {
             if(!isValid(olFeature2geoJsonFeature(features[i])))
             {
-                features.splice()
+                //features.splice()
                 console.log("I AM INVALID G")
                 beforeMod1 = geoJsonFeature2olFeature(beforeMod1)
                 beforeMod2 = geoJsonFeature2olFeature(beforeMod2)
@@ -301,6 +304,7 @@ function MapWrapper() {
         
                 const combinedPoly = jstsGemetry2ol(mergeFeatures(jsts1, jsts2))
         
+                features.push(combinedPoly)
                 source2.addFeature(combinedPoly)
 
                 cleanUserInput(event.target.map_)
@@ -308,10 +312,15 @@ function MapWrapper() {
                 // intersect wtih combined poly
                 // delete the done that doesnt intersect
             } else {
-                //source2.addFeature(latestFeature)
-                //cleanUserInput(event.target.map_)
+ 
             }
         }
+
+
+        features.forEach((latestFeature) => {
+            source2.addFeature(latestFeature)
+            cleanUserInput(event.target.map_)
+        })
     }
 
     const handleNewPoly = (evt) => {
