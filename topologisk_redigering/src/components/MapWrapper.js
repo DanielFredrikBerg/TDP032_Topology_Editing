@@ -26,6 +26,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import { Button } from '@mui/material';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Polygon } from 'ol/geom';
+import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
 
 
 
@@ -284,43 +285,48 @@ function MapWrapper() {
         let source2 = getSource(event.target.map_)
 
         features.forEach((latestFeature) => {
-            event.target.map_.getLayers().getArray()[1].getSource().removeFeature(latestFeature)
+            source2.removeFeature(latestFeature)
         })
 
 
-
-
+        let newPoly = "lel"
+        let originalPoly = "kekw"
         
         for (let i = 0; i<features.length; i++) {
             if(!isValid(olFeature2geoJsonFeature(features[i])))
             {
-                //features.splice()
                 console.log("I AM INVALID G")
                 beforeMod1 = geoJsonFeature2olFeature(beforeMod1)
                 beforeMod2 = geoJsonFeature2olFeature(beforeMod2)
 
                 const jsts1 = olFeature2Jsts(beforeMod1)
                 const jsts2 = olFeature2Jsts(beforeMod2)
-        
-                const combinedPoly = jstsGemetry2ol(mergeFeatures(jsts1, jsts2))
-        
-                features.push(combinedPoly)
-                source2.addFeature(combinedPoly)
-
-                cleanUserInput(event.target.map_)
+                
+                features[i] = jstsGemetry2ol(mergeFeatures(jsts2, jsts1))
+                originalPoly = features[i]
                 // check if the lsat to polygons in the map
                 // intersect wtih combined poly
                 // delete the done that doesnt intersect
-            } else {
- 
+                //intersection 
+                // add intersection node
+            } else 
+            {
+                newPoly = features[i]
             }
+            //source2.addFeature(features[i])
+            //cleanUserInput(event.target.map_)
+
+
         }
 
+        const newPolyJsts = olFeature2Jsts(newPoly) 
+        const originalPolyJsts = olFeature2Jsts(newPoly)
+        //console.log(originalPolyJsts.isGeometryCollection()); 
+        const jsts = OverlayOp.intersection(newPolyJsts, originalPolyJsts)
+        source2.addFeature(jstsGemetry2ol(jsts));
+        //source2.addFeature(newPoly)
+        //source2.addFeatures(jstsGemetry2ol(jsts))
 
-        features.forEach((latestFeature) => {
-            source2.addFeature(latestFeature)
-            cleanUserInput(event.target.map_)
-        })
     }
 
     const handleNewPoly = (evt) => {
