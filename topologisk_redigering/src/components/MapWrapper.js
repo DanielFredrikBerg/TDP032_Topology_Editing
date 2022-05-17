@@ -27,6 +27,8 @@ import { Button } from '@mui/material';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Polygon } from 'ol/geom';
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
+import * as turf from "@turf/turf"
+import { listen } from 'ol/events';
 
 
 
@@ -319,11 +321,13 @@ function MapWrapper() {
 
         }
 
-        const newPolyJsts = olFeature2Jsts(newPoly) 
-        const originalPolyJsts = olFeature2Jsts(newPoly)
+        let intersection = turf.intersect(olFeature2geoJsonFeature(newPoly), olFeature2geoJsonFeature(originalPoly));
+        console.log(intersection)
+        // const newPolyJsts = olFeature2Jsts(newPoly) 
+        // const originalPolyJsts = olFeature2Jsts(newPoly)
         //console.log(originalPolyJsts.isGeometryCollection()); 
-        const jsts = OverlayOp.intersection(newPolyJsts, originalPolyJsts)
-        source2.addFeature(jstsGemetry2ol(jsts));
+        //const jsts = OverlayOp.intersection(newPolyJsts, originalPolyJsts)
+        source2.addFeature(geoJsonFeature2olFeature(intersection));
         //source2.addFeature(newPoly)
         //source2.addFeatures(jstsGemetry2ol(jsts))
 
