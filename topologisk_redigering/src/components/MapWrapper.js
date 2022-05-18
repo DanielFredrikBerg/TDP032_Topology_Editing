@@ -19,7 +19,7 @@ import {deletePolygon} from '../res/HelperFunctions.mjs'
 import {defaultStyle, selectedStyle, invalidStyle, invalidStyle2 } from '../res/Styles.mjs'
 import { isValid, unkink }  from '../res/unkink.mjs'
 import { mergeFeatures } from '../res/jsts.mjs';
-import { geoJsonFeature2olFeature, geoJsonFeatureCollection2olFeatures, olFeature2geoJsonFeature, olFeatures2GeoJsonFeatureCollection, olFeature2Jsts, jstsGemetry2ol } from '../translation/translators.mjs';
+import { geoJsonFeature2olFeature, geoJsonFeatureCollection2olFeatures, olFeature2geoJsonFeature, olFeatures2GeoJsonFeatureCollection, olFeature2Jsts, jstsGemetry2ol, geoJsonFeature2JstsGeometry } from '../translation/translators.mjs';
 import { saveToDatabase } from '../res/DatabaseFunctions.mjs';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SaveIcon from '@mui/icons-material/Save';
@@ -29,6 +29,7 @@ import { Polygon } from 'ol/geom';
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
 import * as turf from "@turf/turf"
 import { listen } from 'ol/events';
+import { addIntersectionNodes } from "../res/jsts.mjs"
 
 
 
@@ -320,16 +321,20 @@ function MapWrapper() {
 
 
         }
+        let originalPolyGeoJson = olFeature2geoJsonFeature(originalPoly)
 
-        let intersection = turf.intersect(olFeature2geoJsonFeature(newPoly), olFeature2geoJsonFeature(originalPoly));
-        console.log(intersection)
-        // const newPolyJsts = olFeature2Jsts(newPoly) 
-        // const originalPolyJsts = olFeature2Jsts(newPoly)
-        //console.log(originalPolyJsts.isGeometryCollection()); 
-        //const jsts = OverlayOp.intersection(newPolyJsts, originalPolyJsts)
-        source2.addFeature(geoJsonFeature2olFeature(intersection));
-        //source2.addFeature(newPoly)
-        //source2.addFeatures(jstsGemetry2ol(jsts))
+        let intersection = turf.intersect(olFeature2geoJsonFeature(newPoly), originalPolyGeoJson);
+
+
+        let jstsIntersection = geoJsonFeature2JstsGeometry(intersection) 
+        let jstsOriginalPoly = geoJsonFeature2JstsGeometry(originalPolyGeoJson) 
+        let jstsTotal = addIntersectionNodes(jstsIntersection, [jstsOriginalPoly, jstsOriginalPoly])
+        
+        source2.addFeature(geoJsonFeature2olFeature(intersection))
+
+        source2.addFeature(originalPoly)
+        cleanUserInput(event.target.map_)
+
 
     }
 
