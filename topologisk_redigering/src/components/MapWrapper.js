@@ -23,7 +23,7 @@ import { geoJsonFeature2olFeature, geoJsonFeatureCollection2olFeatures, olFeatur
 import { saveToDatabase } from '../res/DatabaseFunctions.mjs';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SaveIcon from '@mui/icons-material/Save';
-import { Button } from '@mui/material';
+import { Button, speedDialIconClasses } from '@mui/material';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Polygon } from 'ol/geom';
 import OverlayOp from "jsts/org/locationtech/jts/operation/overlay/OverlayOp.js"
@@ -35,8 +35,7 @@ import { addIntersectionNodes } from "../res/jsts.mjs"
 
 function MapWrapper() {
     const [map, setMap] = useState();
-    let beforeMod1 = ""
-    let beforeMod2 = ""
+    let originalPoly = ""
     let clickHandlerState = 'NONE';
     const mapElement = useRef();
     const mapRef = useRef();
@@ -277,11 +276,18 @@ function MapWrapper() {
         // otherwise beforemod becomes just a reference.
         if(event.features.getArray().length > 1)
         {
-            beforeMod1 = olFeature2geoJsonFeature(event.features.getArray()[event.features.getArray().length - 1])
-            beforeMod2 = olFeature2geoJsonFeature(event.features.getArray()[event.features.getArray().length - 2])
+            let beforeMod1 = olFeature2geoJsonFeature(event.features.getArray()[event.features.getArray().length - 1])
+            let beforeMod2 = olFeature2geoJsonFeature(event.features.getArray()[event.features.getArray().length - 2])
+            beforeMod1 = geoJsonFeature2olFeature(beforeMod1)
+            beforeMod2 = geoJsonFeature2olFeature(beforeMod2)
+
+            const jsts1 = olFeature2Jsts(beforeMod1)
+            const jsts2 = olFeature2Jsts(beforeMod2)
+            console.log(jsts1, jsts2)
+
+            originalPoly = jstsGemetry2ol(mergeFeatures(jsts2, jsts1))
         }
     }
-
 
     const handleModifyend = (event) => {
         let features = event.features.getArray()
@@ -291,50 +297,29 @@ function MapWrapper() {
             source2.removeFeature(latestFeature)
         })
 
-
-        let newPoly = "lel"
-        let originalPoly = "kekw"
-        
         for (let i = 0; i<features.length; i++) {
             if(!isValid(olFeature2geoJsonFeature(features[i])))
             {
-                console.log("I AM INVALID G")
-                beforeMod1 = geoJsonFeature2olFeature(beforeMod1)
-                beforeMod2 = geoJsonFeature2olFeature(beforeMod2)
+                features[i] = originalPoly
+                let newPoly = features[i - 1]
+                features.splice(i-1)
+                features.splice(i)
 
-                const jsts1 = olFeature2Jsts(beforeMod1)
-                const jsts2 = olFeature2Jsts(beforeMod2)
+                let originalPolyGeoJson = olFeature2geoJsonFeature(originalPoly)
+
+                let intersection = turf.intersect(olFeature2geoJsonFeature(newPoly), originalPolyGeoJson);
+
+                let difference = turf.difference(originalPolyGeoJson, intersection);
                 
-                features[i] = jstsGemetry2ol(mergeFeatures(jsts2, jsts1))
-                originalPoly = features[i]
-                // check if the lsat to polygons in the map
-                // intersect wtih combined poly
-                // delete the done that doesnt intersect
-                //intersection 
-                // add intersection node
-            } else 
-            {
-                newPoly = features[i]
-            }
-            //source2.addFeature(features[i])
-            //cleanUserInput(event.target.map_)
-
-
+                source2.addFeature(geoJsonFeature2olFeature(difference))
+                source2.addFeature(geoJsonFeature2olFeature(intersection))
+            } 
         }
-        let originalPolyGeoJson = olFeature2geoJsonFeature(originalPoly)
 
-        let intersection = turf.intersect(olFeature2geoJsonFeature(newPoly), originalPolyGeoJson);
-
-
-        let jstsIntersection = geoJsonFeature2JstsGeometry(intersection) 
-        let jstsOriginalPoly = geoJsonFeature2JstsGeometry(originalPolyGeoJson) 
-        let jstsTotal = addIntersectionNodes(jstsIntersection, [jstsOriginalPoly, jstsOriginalPoly])
-        
-        source2.addFeature(geoJsonFeature2olFeature(intersection))
-
-        source2.addFeature(originalPoly)
-        cleanUserInput(event.target.map_)
-
+        for (let i = 0; i<features.length; i++) {
+            source2.addFeature(features[i])
+            cleanUserInput(event.target.map_)
+        }
 
     }
 
