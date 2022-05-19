@@ -67,9 +67,9 @@ export function calcIntersection(poly1, poly2) {
 
 export const unkink = (polygon) => {
     let unkinkedPolygons = simplepolygon(polygon)
-    unkinkedPolygons.features.forEach(polygon => {
-        polygon = fixCoordinateRotation(polygon)
-    })
+    // unkinkedPolygons.features.forEach(polygon => {
+    //     //polygon = fixCoordinateRotation(polygon)
+    // })
 
     return unkinkedPolygons
 }

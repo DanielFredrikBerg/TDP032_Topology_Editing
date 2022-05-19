@@ -281,11 +281,9 @@ function MapWrapper() {
             beforeMod1 = geoJsonFeature2olFeature(beforeMod1)
             beforeMod2 = geoJsonFeature2olFeature(beforeMod2)
 
-            const jsts1 = olFeature2Jsts(beforeMod1)
-            const jsts2 = olFeature2Jsts(beforeMod2)
-            console.log(jsts1, jsts2)
-
-            originalPoly = jstsGemetry2ol(mergeFeatures(jsts2, jsts1))
+            const jsts1 = olFeature2geoJsonFeature(beforeMod1)
+            const jsts2 = olFeature2geoJsonFeature(beforeMod2)
+            originalPoly = turf.union(jsts1, jsts2)
         }
     }
 
@@ -305,11 +303,9 @@ function MapWrapper() {
                 features.splice(i-1)
                 features.splice(i)
 
-                let originalPolyGeoJson = olFeature2geoJsonFeature(originalPoly)
+                let intersection = turf.intersect(olFeature2geoJsonFeature(newPoly), originalPoly);
 
-                let intersection = turf.intersect(olFeature2geoJsonFeature(newPoly), originalPolyGeoJson);
-
-                let difference = turf.difference(originalPolyGeoJson, intersection);
+                let difference = turf.difference(originalPoly, intersection);
                 
                 source2.addFeature(geoJsonFeature2olFeature(difference))
                 source2.addFeature(geoJsonFeature2olFeature(intersection))
@@ -317,6 +313,7 @@ function MapWrapper() {
         }
 
         for (let i = 0; i<features.length; i++) {
+            console.log(features[i])
             source2.addFeature(features[i])
             cleanUserInput(event.target.map_)
         }
@@ -324,9 +321,6 @@ function MapWrapper() {
     }
 
     const handleNewPoly = (evt) => {
-        // when add feature check if valid
-        //console.log("EVENT FEATURE converted:")
-        //console.log(olFeature2geoJsonFeature(evt.feature))
         if (!isValid(olFeature2geoJsonFeature(evt.feature))) {
             map.getLayers().getArray()[1].getSource().removeFeature(evt.feature)
         } else {
