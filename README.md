@@ -68,7 +68,7 @@ Operations supported by the editor are listed below:
 ## Credits
 
 Andrei Platoga
-Daniel Huber
+Daniel Berg
 Edvin Nilsson Sommermark
 Josefin Bodin
 Simon Gradin
@@ -78,7 +78,7 @@ Theodore Nilsson
 
 MIT License
 
-Copyright (c) [2022] [Andrei Platoga, Daniel Huber, Edvin Nilsson Sommermark, Josefin Bodin, Simon Gradin, Theodore Nilsson]
+Copyright (c) [2022] [Andrei Platoga, Daniel Berg, Edvin Nilsson Sommermark, Josefin Bodin, Simon Gradin, Theodore Nilsson]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
